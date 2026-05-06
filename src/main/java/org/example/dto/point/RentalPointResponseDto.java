@@ -16,6 +16,12 @@ public class RentalPointResponseDto {
     private Long id;
     @Schema(description = "Название точки проката", example = "Центральный парк")
     private String name;
+    @Schema(description = "Город", example = "Минск")
+    private String city;
+    @Schema(description = "Улица", example = "пр-т Независимости")
+    private String street;
+    @Schema(description = "Номер дома", example = "1")
+    private String houseNumber;
     @Schema(description = "ID родительской точки проката", example = "1")
     private Long parentId;
     @Schema(description = "Широта", example = "53.9006")

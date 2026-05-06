@@ -1,9 +1,7 @@
 package org.example.dto.rental;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -29,4 +27,10 @@ public class FinishRentalDto {
     @DecimalMin(value = "0.0", message = "Дистанция не может быть отрицательной")
     @Schema(description = "Расстояние поездки, присланное самокатом (км)", example = "1.52")
     private BigDecimal distance;
+
+    @NotNull(message = "Уровень заряда батареи обязателен")
+    @Min(value = 0, message = "Уровень заряда не может быть меньше 0")
+    @Max(value = 100, message = "Уровень заряда не может быть больше 100")
+    @Schema(description = "Текущий уровень заряда батареи (%)", example = "85")
+    private Integer batteryLevel;
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterUpdateDto;
+import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -23,64 +24,85 @@ public class ScooterService {
     private final ScooterRepository scooterRepository;
     private final ScooterMapper scooterMapper;
     private final RentalPointRepository rentalPointRepository;
+    private final RentalPointService rentalPointService;
 
-    public Scooter createScooter(ScooterCreateDto scooter) {
-        String serialNumber = scooter.getSerialNumber();
+    public Scooter createScooter(ScooterCreateDto scooterDto) {
+        validateSerialNumberUniqueness(scooterDto.getSerialNumber());
+
+        Scooter scooter = scooterMapper.toEntity(scooterDto);
+        assignRentalPoint(scooter, scooterDto.getRentalPointId());
+
+        scooter = scooterRepository.create(scooter);
+        log.info("Успешно зарегистрирован новый самокат: SN={}, ID={}", scooter.getSerialNumber(), scooter.getId());
+        
+        return scooter;
+    }
+
+    public List<Scooter> createScootersBatch(List<ScooterCreateDto> dtos) {
+        log.info("Начато пакетное создание самокатов. Количество: {}", dtos.size());
+        List<Scooter> savedScooters = dtos.stream().map(this::createScooter).toList();
+        log.info("Успешно завершено пакетное создание {} самокатов", savedScooters.size());
+        return savedScooters;
+    }
+
+    public Scooter updateScooter(Long id, ScooterUpdateDto scooterDto) {
+        Scooter scooter = findScooterById(id);
+        scooterMapper.updateEntity(scooterDto, scooter);
+
+        if (scooterDto.getRentalPointId() != null) {
+            assignRentalPoint(scooter, scooterDto.getRentalPointId());
+        }
+
+        log.info("Данные самоката с ID {} успешно обновлены", scooter.getId());
+        return scooter;
+    }
+
+    // установка точки
+    private void assignRentalPoint(Scooter scooter, Long rentalPointId) {
+        if (rentalPointId == null) return;
+        
+        validateRentalPointForScooter(rentalPointId);
+        
+        scooter.setRentalPoint(rentalPointRepository.findById(rentalPointId)
+                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + rentalPointId + " не найдена")));
+    }
+
+    // есть ли у точки дочерние элементы
+    private void validateRentalPointForScooter(Long rentalPointId) {
+        RentalPoint point = rentalPointRepository.findById(rentalPointId)
+                .orElseThrow(() -> new ResourceNotFoundException("Точка проката не найдена"));
+        
+        if (rentalPointService.getAddressLevel(point) != 3) {
+            throw new BusinessException("Самокат можно привязать только к конечной точке проката");
+        }
+    }
+
+    private void validateSerialNumberUniqueness(String serialNumber) {
         if (scooterRepository.findBySerialNumber(serialNumber).isPresent()) {
             throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
         }
-
-        Scooter newScooter = scooterMapper.toEntity(scooter);
-
-        if (scooter.getRentalPointId() != null) {
-            newScooter.setRentalPoint(rentalPointRepository.findById(scooter.getRentalPointId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Точка проката не найдена")));
-        }
-
-        Scooter savedScooter = scooterRepository.create(newScooter);
-
-        log.info("Успешно зарегистрирован новый самокат: SN={}, ID={}", serialNumber, savedScooter.getId());
-        return savedScooter;
     }
 
     @Transactional(readOnly = true)
     public Scooter findScooterById(Long id) {
-        Scooter scooter = scooterRepository.findById(id)
+        return scooterRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Самокат с id " + id + " не найден"));
-
-        log.info("Успешно выполнен поиск самоката по ID: {}", id);
-        return scooter;
     }
 
     @Transactional(readOnly = true)
     public Scooter findScooterBySerialNumber(String serialNumber) {
-        Scooter scooter = scooterRepository.findBySerialNumber(serialNumber)
+        return scooterRepository.findBySerialNumber(serialNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Самокат с серийным номером " + serialNumber + " не найден"));
-
-        log.info("Успешно выполнен поиск самоката по серийному номеру: {}", serialNumber);
-        return scooter;
     }
 
     @Transactional(readOnly = true)
     public List<Scooter> findAvailableScooters(Long rentalPointId, Integer minBatteryLevel) {
-        List<Scooter> scooters = scooterRepository.findAvailableByRentalPoint(rentalPointId, minBatteryLevel);
-
-        log.info("Найден(о) {} свободных самокатов на точке {} с мин. зарядом {}", scooters.size(), rentalPointId, minBatteryLevel);
-        return scooters;
+        return scooterRepository.findAvailableByRentalPoint(rentalPointId, minBatteryLevel);
     }
 
     public void deleteScooterById(Long scooterId) {
         findScooterById(scooterId);
         scooterRepository.deleteById(scooterId);
         log.info("Самокат с ID {} успешно удален из базы", scooterId);
-    }
-
-    public Scooter updateScooter(Long id, ScooterUpdateDto scooterDto) {
-        Scooter scooter = findScooterById(id);
-
-        scooterMapper.updateEntity(scooterDto, scooter);
-
-        log.info("Данные самоката с ID {} успешно обновлены", scooter.getId());
-        return scooter;
     }
 }

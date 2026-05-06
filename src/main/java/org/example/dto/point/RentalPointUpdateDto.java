@@ -17,6 +17,18 @@ public class RentalPointUpdateDto {
     @Schema(description = "Новое название точки проката", example = "Центральный парк")
     private String name;
 
+    @Size(max = 50, message = "Название города не должно превышать 50 символов")
+    @Schema(description = "Новое название города", example = "Минск")
+    private String city;
+
+    @Size(max = 50, message = "Название улицы не должно превышать 50 символов")
+    @Schema(description = "Новое название улицы", example = "пр-т Независимости")
+    private String street;
+
+    @Size(max = 10, message = "Номер дома не должен превышать 10 символов")
+    @Schema(description = "Новый номер дома", example = "1")
+    private String houseNumber;
+
     @Schema(description = "Новый ID родительской точки", example = "1")
     private Long parentId;
 

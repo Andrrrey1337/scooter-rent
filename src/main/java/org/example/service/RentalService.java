@@ -34,6 +34,7 @@ public class RentalService {
     private final UserRepository userRepository;
     private final PromoCodeRepository promoCodeRepository;
     private final UserSubscriptionRepository userSubscriptionRepository;
+    private final RentalPointRepository rentalPointRepository;
 
     private static final int DEFAULT_HOLD_MINUTES = 10;
 
@@ -143,8 +144,9 @@ public class RentalService {
     }
 
     private long calculateDuration(LocalDateTime start, LocalDateTime end) {
-        long minutes = Duration.between(start, end).toMinutes();
-        return minutes <= 0 ? 1 : minutes;
+        long seconds = Duration.between(start, end).getSeconds();
+        long minutes = (long) Math.ceil(seconds / 60.0);
+        return Math.max(1, minutes); // Округление вверх, минимум 1 минута
     }
 
     private BigDecimal calculateFinalPrice(Rental rental, long durationMinutes) {
@@ -192,10 +194,25 @@ public class RentalService {
         userRepository.update(user);
     }
 
+    private static final double PARKING_RADIUS_METERS = 50.0;
+
     private void updateScooterDataAfterRental(Scooter scooter, FinishRentalDto dto) {
+        // ищем ближайшую парковку уровня 3 в радиусе PARKING_RADIUS_METERS
+        RentalPoint nearestPoint = rentalPointRepository.findNearestValidParkingPoint(
+                dto.getEndLatitude(), 
+                dto.getEndLongitude(), 
+                PARKING_RADIUS_METERS
+        ).orElseThrow(() -> new BusinessException(
+                "Невозможно завершить аренду. Вы находитесь вне зоны парковки (радиус " + PARKING_RADIUS_METERS + "м). " +
+                "Пожалуйста, оставьте самокат на ближайшей точке проката."
+        ));
+
+        // обновляем данные самоката
         scooter.setScooterStatus(ScooterStatus.AVAILABLE);
         scooter.setLongitude(dto.getEndLongitude());
         scooter.setLatitude(dto.getEndLatitude());
+        scooter.setRentalPoint(nearestPoint); // привязываем самокат к новой точке
+        scooter.setBatteryLevel(dto.getBatteryLevel());
 
         if (scooter.getMileage() == null) {
             scooter.setMileage(BigDecimal.ZERO);

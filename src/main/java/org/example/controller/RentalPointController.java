@@ -38,6 +38,14 @@ public class RentalPointController {
         return new ResponseEntity<>(rentalPointMapper.toDto(rentalPoint), HttpStatus.CREATED);
     }
 
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Создать несколько точек проката", description = "Пакетное добавление новых точек")
+    public ResponseEntity<List<RentalPointResponseDto>> createRentalPointsBatch(@Valid @RequestBody List<RentalPointCreateDto> dtos) {
+        List<RentalPoint> rentalPoints = rentalPointService.createRentalPointsBatch(dtos);
+        return new ResponseEntity<>(rentalPointMapper.toDtos(rentalPoints), HttpStatus.CREATED);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Получить точку проката по ID")
     public ResponseEntity<RentalPointResponseDto> getRentalPointById(@PathVariable Long id) {

@@ -50,9 +50,10 @@ public class RentalControllerIntegrationTest extends BaseIntegrationTest {
 
         // данные поездки для завершения
         FinishRentalDto finishDto = new FinishRentalDto();
-        finishDto.setEndLatitude(new BigDecimal("53.9100"));
-        finishDto.setEndLongitude(new BigDecimal("27.5700"));
+        finishDto.setEndLatitude(new BigDecimal("53.9000"));
+        finishDto.setEndLongitude(new BigDecimal("27.5600"));
         finishDto.setDistance(new BigDecimal("2.5"));
+        finishDto.setBatteryLevel(45);
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_rental_finish.json"));
 

@@ -21,14 +21,23 @@ public class RentalPoint {
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+    @Column(name = "city", length = 50)
+    private String city;
+
+    @Column(name = "street", length = 50)
+    private String street;
+
+    @Column(name = "house_number", length = 10)
+    private String houseNumber;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private RentalPoint parent;
 
-    @Column(name = "latitude", nullable = false, precision = 10, scale = 8)
+    @Column(name = "latitude", precision = 10, scale = 8)
     private BigDecimal latitude;
 
-    @Column(name = "longitude", nullable = false, precision = 10, scale = 8)
+    @Column(name = "longitude", precision = 10, scale = 8)
     private BigDecimal longitude;
 
 }

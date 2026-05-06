@@ -31,7 +31,7 @@ public class User implements UserDetails {
 
     @Column(name = "role", nullable = false, length = 50)
     @Enumerated(EnumType.STRING) // для конвертации в строку
-    private Role role; // user or admin or manager
+    private Role role; // user or admin
 
     @Column(name = "is_active")
     @Builder.Default

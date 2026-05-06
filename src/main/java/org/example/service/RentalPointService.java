@@ -32,14 +32,10 @@ public class RentalPointService {
     private final ScooterMapper scooterMapper;
 
     public RentalPoint createRentalPoint(RentalPointCreateDto dto) {
-        if (rentalPointRepository.findRentalPointByName(dto.getName()).isPresent()) {
-            throw new BusinessException("Точка проката с названием " +  dto.getName() + " уже существует");
-        }
+        validateNameUniqueness(dto.getName());
+        
         RentalPoint rentalPoint = rentalPointMapper.toEntity(dto);
-
-        if (dto.getParentId() != null) {
-            rentalPoint.setParent(findRentalPointById(dto.getParentId()));
-        }
+        processHierarchy(rentalPoint, dto.getParentId());
 
         rentalPoint = rentalPointRepository.create(rentalPoint);
         log.info("Успешно создана новая точка проката: ID={}, название='{}'", rentalPoint.getId(), rentalPoint.getName());
@@ -47,48 +43,145 @@ public class RentalPointService {
         return rentalPoint;
     }
 
-    @Transactional(readOnly = true)
-    public RentalPoint findRentalPointById(Long rentalPointId) {
-        if (rentalPointId == null) {
-            return  null; // для нашего маппера, если id будет null вернем null, не обращаясь к бд
+    public List<RentalPoint> createRentalPointsBatch(List<RentalPointCreateDto> dtos) {
+        log.info("Начато пакетное создание точек проката. Количество: {}", dtos.size());
+        List<RentalPoint> savedPoints = dtos.stream().map(this::createRentalPoint).toList();
+        log.info("Успешно завершено пакетное создание {} точек проката", savedPoints.size());
+        return savedPoints;
+    }
+
+    public RentalPoint updateRentalPoint(Long id, RentalPointUpdateDto dto) {
+        RentalPoint rentalPoint = findRentalPointById(id);
+        
+        if (dto.getName() != null && !dto.getName().equals(rentalPoint.getName())) {
+            validateNameUniqueness(dto.getName());
+        }
+        
+        rentalPointMapper.updateEntity(dto, rentalPoint);
+        processHierarchy(rentalPoint, dto.getParentId());
+
+        log.info("Данные точки проката с ID {} успешно обновлены", rentalPoint.getId());
+        return rentalPoint;
+    }
+
+    // реализация иерархии точек
+    private void processHierarchy(RentalPoint rentalPoint, Long parentId) {
+        int level;
+        if (parentId != null) {
+            RentalPoint parent = findRentalPointById(parentId);
+            validateAndApplyHierarchy(rentalPoint, parent);
+            level = getAddressLevel(rentalPoint);
+        } else if (rentalPoint.getParent() != null) {
+            validateAndApplyHierarchy(rentalPoint, rentalPoint.getParent());
+            level = getAddressLevel(rentalPoint);
+        } else {
+            validateRootPoint(rentalPoint);
+            level = 1;
+        }
+        validateCoordinates(rentalPoint, level);
+    }
+
+    private void validateCoordinates(RentalPoint point, int level) {
+        if (level == 3) {
+            if (point.getLatitude() == null || point.getLongitude() == null) {
+                throw new BusinessException("Для точки уровня 'Дом' широта и долгота обязательны");
+            }
+        }
+    }
+
+    // проверка связи родителя и ребенка
+    private void validateAndApplyHierarchy(RentalPoint child, RentalPoint parent) {
+        applyInheritance(child, parent);
+        validateAddressLevels(child, parent);
+        validateAddressConsistency(child, parent);
+
+        child.setParent(parent);
+    }
+
+    // заполнение данных (если не указаны) из родителя
+    private void applyInheritance(RentalPoint child, RentalPoint parent) {
+        if (isFieldBlank(child.getCity())) {
+            child.setCity(parent.getCity());
+        }
+        if (isFieldBlank(child.getStreet())) {
+            child.setStreet(parent.getStreet());
+        }
+    }
+
+    // проверка последовательности уровней
+    private void validateAddressLevels(RentalPoint child, RentalPoint parent) {
+        int childLevel = getAddressLevel(child);
+        int parentLevel = getAddressLevel(parent);
+
+        if (childLevel == -1 || parentLevel == -1) {
+            throw new BusinessException("Нарушена целостность адреса");
         }
 
-        RentalPoint rentalPoint = rentalPointRepository.findById(rentalPointId)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + rentalPointId + " не найдена"));
+        if (childLevel != parentLevel + 1) {
+            throw new BusinessException(String.format(
+                    "Нарушена последовательность: уровень %d не может быть дочерним для %d. " +
+                    "Ожидается строго: Город -> Улица -> Дом", childLevel, parentLevel));
+        }
+    }
 
-        log.info("Успешно найдена точка проката с ID: {}", rentalPointId);
-        return rentalPoint;
+    // если у точки нет родителя, она должна быть городом
+    private void validateRootPoint(RentalPoint point) {
+        if (getAddressLevel(point) != 1) {
+            throw new BusinessException("Точка без родителя должна быть уровня 'Город' (указан только город)");
+        }
+    }
+
+    // проверка данных точки с данными родителя
+    private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
+        if (parent.getCity() != null && !child.getCity().equalsIgnoreCase(parent.getCity())) {
+            throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
+        }
+        if (parent.getStreet() != null && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
+            throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
+        }
+    }
+
+    // определяет вес адреса
+    @Transactional(readOnly = true)
+    public int getAddressLevel(RentalPoint point) {
+        boolean hasCity = !isFieldBlank(point.getCity());
+        boolean hasStreet = !isFieldBlank(point.getStreet());
+        boolean hasHouse = !isFieldBlank(point.getHouseNumber());
+
+        if (hasHouse) return (hasCity && hasStreet) ? 3 : -1;
+        if (hasStreet) return hasCity ? 2 : -1;
+        if (hasCity) return 1;
+        
+        return 0;
+    }
+
+    private boolean isFieldBlank(String field) {
+        return field == null || field.isBlank();
+    }
+
+    // проверка дублирования имен точек
+    private void validateNameUniqueness(String name) {
+        if (rentalPointRepository.findRentalPointByName(name).isPresent()) {
+            throw new BusinessException("Точка проката с названием " + name + " уже существует");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public RentalPoint findRentalPointById(Long id) {
+        if (id == null) return null;
+        return rentalPointRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + id + " не найдена"));
     }
 
     @Transactional(readOnly = true)
     public RentalPoint findRentalPointByName(String name) {
-        RentalPoint rentalPoint = rentalPointRepository.findRentalPointByName(name)
+        return rentalPointRepository.findRentalPointByName(name)
                 .orElseThrow(() -> new ResourceNotFoundException("Точка проката с названием " + name + " не найдена"));
-
-        log.info("Успешно найдена точка проката с названием: {}", name);
-        return rentalPoint;
     }
 
     @Transactional(readOnly = true)
     public List<RentalPoint> findAllRentalPoints() {
-        List<RentalPoint> rentalPoints = rentalPointRepository.findAll();
-
-        log.info("Получен список всех точек проката. Количество: {}", rentalPoints.size());
-        return rentalPoints;
-    }
-
-    public RentalPoint updateRentalPoint(Long id, RentalPointUpdateDto  rentalPointUpdateDto) {
-        RentalPoint rentalPoint = findRentalPointById(id);
-        rentalPointMapper.updateEntity(rentalPointUpdateDto, rentalPoint);
-
-        if (rentalPointUpdateDto.getParentId() != null) {
-            RentalPoint parentPoint = findRentalPointById(rentalPointUpdateDto.getParentId());
-            rentalPoint.setParent(parentPoint);
-        }
-
-        log.info("Данные точки проката с ID {} успешно обновлены", rentalPoint.getId());
-
-        return rentalPoint;
+        return rentalPointRepository.findAll();
     }
 
     public void deleteById(Long id) {
@@ -100,19 +193,19 @@ public class RentalPointService {
     @Transactional(readOnly = true)
     public List<Scooter> findAllScootersAtRentalPoint(Long rentalPointId) {
         findRentalPointById(rentalPointId);
-
-        List<Scooter> scooters = scooterRepository.findAllByRentalPoint(rentalPointId);
-
-        log.info("Найдено {} самокатов на точке ID={}", scooters.size(), rentalPointId);
-
-        return scooters;
+        return scooterRepository.findAllByRentalPoint(rentalPointId);
     }
 
     @Transactional(readOnly = true)
-    public RentalPointDataDto getRentalPointDataById(Long rentalPointId) {
-        RentalPoint rentalPoint = findRentalPointById(rentalPointId);
-        List<Scooter> scooters = findAllScootersAtRentalPoint(rentalPointId); // все самокаты на точке
-        List<Scooter> availableScooters = scooters.stream() // только доступные самока на точке
+    public RentalPointDataDto getRentalPointDataById(Long id) {
+        RentalPoint point = findRentalPointById(id);
+        List<Scooter> allScooters = scooterRepository.findAllByRentalPoint(id);
+        
+        return buildRentalPointDataDto(point, allScooters);
+    }
+
+    private RentalPointDataDto buildRentalPointDataDto(RentalPoint point, List<Scooter> scooters) {
+        List<Scooter> available = scooters.stream()
                 .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
                 .toList();
 
@@ -120,24 +213,20 @@ public class RentalPointService {
                 .filter(s -> s.getScooterStatus() == ScooterStatus.RENTED)
                 .count();
 
-        Map<String, Long> availableModels = availableScooters.stream()
-                .collect(Collectors.groupingBy(
-                        scooter -> scooter.getScooterModel().getName(), // ключ
-                        Collectors.counting() // значение
-                ));
+        Map<String, Long> modelsSummary = available.stream()
+                .collect(Collectors.groupingBy(s -> s.getScooterModel().getName(), Collectors.counting()));
 
-        RentalPointDataDto rentalPointDataDto = RentalPointDataDto.builder()
-                .rentalPointId(rentalPointId)
-                .rentalPointName(rentalPoint.getName())
+        return RentalPointDataDto.builder()
+                .rentalPointId(point.getId())
+                .rentalPointName(point.getName())
+                .city(point.getCity())
+                .street(point.getStreet())
+                .houseNumber(point.getHouseNumber())
                 .totalScooters(scooters.size())
-                .availableScooters(availableScooters.size())
+                .availableScooters(available.size())
                 .rentedScooters(rentedCount)
-                .availableModelsSummary(availableModels)
-                .availableScootersList(scooterMapper.toAdminDtos(availableScooters))
+                .availableModelsSummary(modelsSummary)
+                .availableScootersList(scooterMapper.toAdminDtos(available))
                 .build();
-
-        log.info("Успешно сгенерирована сводка для точки ID={}", rentalPointId);
-
-        return rentalPointDataDto;
     }
 }

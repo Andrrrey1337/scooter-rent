@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
         ),
         security = @SecurityRequirement(name = "JWT") // требование схемы, которая указана дальше
 )
-// описание схемы безопасности jwt
+// описание схемы безопасности jwt для использования токена в swagger
 @SecurityScheme(
         name = "JWT",
         type = SecuritySchemeType.HTTP,

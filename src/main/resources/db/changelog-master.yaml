@@ -11,3 +11,7 @@ databaseChangeLog:
       file: db/changeset/005-add-admin.sql
   - include:
       file: db/changeset/006-add-held-balance-to-users.sql
+  - include:
+      file: db/changeset/007-add-address-to-rental-points.sql
+  - include:
+      file: db/changeset/008-make-coordinates-nullable.sql

@@ -15,8 +15,8 @@ VALUES (1, 'Минутный', 'Описание', 5.00);
 INSERT INTO scooter_models (id, name, price_per_minute, max_speed)
 VALUES (1, 'Ninebot Max', 2.00, 25);
 
-INSERT INTO rental_points (id, name, latitude, longitude)
-VALUES (1, 'Центр', 53.9000, 27.5600);
+INSERT INTO rental_points (id, name, city, street, house_number, latitude, longitude)
+VALUES (1, 'Центр', 'Минск', 'Независимости', '1', 53.9000, 27.5600);
 
 -- свобоный самокат
 INSERT INTO scooters (id, serial_number, model_id, rental_point_id, battery_level, latitude, longitude, status, mileage)

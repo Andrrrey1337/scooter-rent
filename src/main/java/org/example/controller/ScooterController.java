@@ -34,6 +34,14 @@ public class ScooterController {
         return new  ResponseEntity<>(scooterMapper.toAdminDto(scooter), HttpStatus.CREATED);
     }
 
+    @PostMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Добавить несколько самокатов", description = "Пакетное добавление новых самокатов")
+    public ResponseEntity<List<ScooterAdminResponseDto>> createScootersBatch(@Valid @RequestBody List<ScooterCreateDto> dtos) {
+        List<Scooter> scooters = scooterService.createScootersBatch(dtos);
+        return new ResponseEntity<>(scooterMapper.toAdminDtos(scooters), HttpStatus.CREATED);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить самокат по ID (админ)", description = "Возвращает полную информацию о самокате")

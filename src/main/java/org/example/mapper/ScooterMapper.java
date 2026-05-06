@@ -28,6 +28,10 @@ public interface ScooterMapper {
 
     @Mapping(source = "scooterModel.id", target = "modelId")
     @Mapping(source = "rentalPoint.id", target = "rentalPointId")
+    @Mapping(source = "rentalPoint.name", target = "rentalPointName")
+    @Mapping(source = "rentalPoint.city", target = "city")
+    @Mapping(source = "rentalPoint.street", target = "street")
+    @Mapping(source = "rentalPoint.houseNumber", target = "houseNumber")
     @Mapping(source = "scooterModel.name", target = "modelName")
     ScooterResponseDto toDto(Scooter scooter);
 
@@ -35,6 +39,10 @@ public interface ScooterMapper {
 
     @Mapping(source = "scooterModel.id", target = "modelId")
     @Mapping(source = "rentalPoint.id", target = "rentalPointId")
+    @Mapping(source = "rentalPoint.name", target = "rentalPointName")
+    @Mapping(source = "rentalPoint.city", target = "city")
+    @Mapping(source = "rentalPoint.street", target = "street")
+    @Mapping(source = "rentalPoint.houseNumber", target = "houseNumber")
     @Mapping(source = "scooterModel.name", target = "modelName")
     ScooterAdminResponseDto toAdminDto(Scooter scooter);
 

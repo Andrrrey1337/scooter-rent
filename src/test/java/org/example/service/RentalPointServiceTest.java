@@ -49,6 +49,7 @@ class RentalPointServiceTest {
         rentalPoint = new RentalPoint();
         rentalPoint.setId(id);
         rentalPoint.setName(name);
+        rentalPoint.setCity("Минск");
     }
 
     @Test
@@ -56,6 +57,7 @@ class RentalPointServiceTest {
     void createRentalPoint_Success() {
         RentalPointCreateDto dto = new RentalPointCreateDto();
         dto.setName(name);
+        dto.setCity("Минск");
 
         when(rentalPointRepository.findRentalPointByName(name)).thenReturn(Optional.empty());
         when(rentalPointMapper.toEntity(dto)).thenReturn(rentalPoint);
@@ -120,11 +122,77 @@ class RentalPointServiceTest {
     @DisplayName("updateRentalPoint - Успех")
     void updateRentalPoint_Success() {
         RentalPointUpdateDto updateDto = new RentalPointUpdateDto();
+        updateDto.setName("New Name");
+
         when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
 
         rentalPointService.updateRentalPoint(id, updateDto);
 
         verify(rentalPointMapper).updateEntity(updateDto, rentalPoint);
+    }
+
+    @Test
+    @DisplayName("validateAndApplyHierarchy - Перескакивание уровня (Город -> Дом)")
+    void validateAndApplyHierarchy_LevelSkipping_ThrowsException() {
+        RentalPoint parent = new RentalPoint();
+        parent.setId(10L);
+        parent.setCity("Минск"); // Уровень 1
+
+        RentalPoint child = new RentalPoint();
+        child.setCity("Минск");
+        child.setStreet("Ленина");
+        child.setHouseNumber("1"); // Уровень 3
+
+        RentalPointCreateDto dto = new RentalPointCreateDto();
+        dto.setParentId(10L);
+
+        when(rentalPointMapper.toEntity(dto)).thenReturn(child);
+        when(rentalPointRepository.findById(10L)).thenReturn(Optional.of(parent));
+
+        assertThrows(BusinessException.class, () -> rentalPointService.createRentalPoint(dto));
+    }
+
+    @Test
+    @DisplayName("validateAndApplyHierarchy - Наследование города")
+    void validateAndApplyHierarchy_InheritCity_Success() {
+        RentalPoint parent = new RentalPoint();
+        parent.setId(2L);
+        parent.setCity("Минск");
+
+        RentalPoint child = new RentalPoint();
+        child.setName("Child");
+        child.setStreet("Ленина"); // Делаем ребенка детальнее (уровень 2)
+
+        RentalPointCreateDto dto = new RentalPointCreateDto();
+        dto.setParentId(2L);
+
+        when(rentalPointMapper.toEntity(dto)).thenReturn(child);
+        when(rentalPointRepository.findById(2L)).thenReturn(Optional.of(parent));
+        when(rentalPointRepository.create(child)).thenReturn(child);
+
+        rentalPointService.createRentalPoint(dto);
+
+        assertEquals("Минск", child.getCity());
+    }
+
+    @Test
+    @DisplayName("validateAndApplyHierarchy - Несоответствие города")
+    void validateAndApplyHierarchy_CityMismatch_ThrowsException() {
+        RentalPoint parent = new RentalPoint();
+        parent.setId(2L);
+        parent.setCity("Минск");
+
+        RentalPoint child = new RentalPoint();
+        child.setCity("Москва");
+        child.setStreet("Ленина");
+
+        RentalPointCreateDto dto = new RentalPointCreateDto();
+        dto.setParentId(2L);
+
+        when(rentalPointMapper.toEntity(dto)).thenReturn(child);
+        when(rentalPointRepository.findById(2L)).thenReturn(Optional.of(parent));
+
+        assertThrows(BusinessException.class, () -> rentalPointService.createRentalPoint(dto));
     }
 
     @Test

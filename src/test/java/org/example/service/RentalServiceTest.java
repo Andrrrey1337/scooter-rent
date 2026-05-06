@@ -37,6 +37,7 @@ class RentalServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private PromoCodeRepository promoCodeRepository;
     @Mock private UserSubscriptionRepository userSubscriptionRepository;
+    @Mock private RentalPointRepository rentalPointRepository;
 
     @InjectMocks
     private RentalService rentalService;
@@ -173,15 +174,19 @@ class RentalServiceTest {
         finishDto.setEndLatitude(new BigDecimal("53.91"));
         finishDto.setEndLongitude(new BigDecimal("27.51"));
         finishDto.setDistance(new BigDecimal("1.5"));
+        finishDto.setBatteryLevel(80);
 
         when(rentalRepository.findById(1L)).thenReturn(Optional.of(rental));
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
+        when(rentalPointRepository.findNearestValidParkingPoint(any(), any(), anyDouble()))
+                .thenReturn(Optional.of(new RentalPoint()));
 
         Rental result = rentalService.finishRental(1L, finishDto);
 
         assertNotNull(result);
         assertFalse(result.getIsActive());
         assertEquals(ScooterStatus.AVAILABLE, scooter.getScooterStatus());
+        assertEquals(80, scooter.getBatteryLevel());
         verify(userRepository).update(user);
     }
 
@@ -196,6 +201,7 @@ class RentalServiceTest {
         finishDto.setEndLatitude(new BigDecimal("53.91"));
         finishDto.setEndLongitude(new BigDecimal("27.51"));
         finishDto.setDistance(new BigDecimal("1.5"));
+        finishDto.setBatteryLevel(80);
 
         BusinessException exception = assertThrows(BusinessException.class, () -> rentalService.finishRental(1L, finishDto));
     }

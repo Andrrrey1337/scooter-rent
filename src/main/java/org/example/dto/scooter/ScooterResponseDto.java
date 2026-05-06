@@ -22,6 +22,14 @@ public class ScooterResponseDto {
     private String modelName;
     @Schema(description = "ID точки проката", example = "1")
     private Long rentalPointId;
+    @Schema(description = "Название точки проката", example = "Центральный парк")
+    private String rentalPointName;
+    @Schema(description = "Город", example = "Минск")
+    private String city;
+    @Schema(description = "Улица", example = "пр-т Независимости")
+    private String street;
+    @Schema(description = "Номер дома", example = "1")
+    private String houseNumber;
     @Schema(description = "Уровень заряда батареи", example = "80")
     private Integer batteryLevel;
     @Schema(description = "Широта", example = "53.9006")

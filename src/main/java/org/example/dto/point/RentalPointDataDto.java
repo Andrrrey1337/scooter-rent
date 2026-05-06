@@ -18,6 +18,12 @@ public class RentalPointDataDto {
     private Long rentalPointId;
     @Schema(description = "Название точки проката", example = "Центральный парк")
     private String rentalPointName;
+    @Schema(description = "Город", example = "Минск")
+    private String city;
+    @Schema(description = "Улица", example = "пр-т Независимости")
+    private String street;
+    @Schema(description = "Номер дома", example = "1")
+    private String houseNumber;
     @Schema(description = "Всего самокатов на точке", example = "25")
     private long totalScooters;
     @Schema(description = "Доступно самокатов для аренды", example = "10")
