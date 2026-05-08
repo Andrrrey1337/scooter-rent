@@ -4,8 +4,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.example.dto.tariff.TariffCreateDto;
 import org.example.dto.tariff.TariffResponseDto;
 import org.example.dto.tariff.TariffUpdateDto;
-import org.example.entity.Tariff;
-import org.example.mapper.TariffMapper;
 import org.example.service.TariffService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,20 +27,10 @@ class TariffControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private TariffService tariffService;
-    @MockitoBean
-    private TariffMapper tariffMapper;
-
-    private Tariff testTariff;
     private TariffResponseDto responseDto;
 
     @BeforeEach
     void setUp() {
-        testTariff = Tariff.builder()
-                .id(1L)
-                .name("Standard")
-                .price(BigDecimal.valueOf(10.0))
-                .build();
-
         responseDto = new TariffResponseDto(1L, "Standard", "Description", BigDecimal.valueOf(10.0));
     }
 
@@ -54,10 +42,7 @@ class TariffControllerTest extends BaseControllerTest {
         createDto.setPrice(BigDecimal.valueOf(10.0));
         createDto.setDescription("Description");
 
-        when(tariffMapper.toEntity(any(TariffCreateDto.class))).thenReturn(testTariff);
-        when(tariffService.createTariff(any(Tariff.class))).thenReturn(testTariff);
-        when(tariffMapper.toDto(testTariff)).thenReturn(responseDto);
-
+        when(tariffService.createTariff(any(TariffCreateDto.class))).thenReturn(responseDto);
         mockMvc.perform(post("/api/tariffs")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createDto)))
@@ -69,9 +54,7 @@ class TariffControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/tariffs/{id} - Получение по ID")
     void getTariffById_Success() throws Exception {
-        when(tariffService.findTariffById(1L)).thenReturn(testTariff);
-        when(tariffMapper.toDto(testTariff)).thenReturn(responseDto);
-
+        when(tariffService.getTariffDtoById(1L)).thenReturn(responseDto);
         mockMvc.perform(get("/api/tariffs/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -81,8 +64,7 @@ class TariffControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/tariffs/name/{name} - Получение по названию")
     void getTariffByName_Success() throws Exception {
-        when(tariffService.findTariffByName("Standard")).thenReturn(testTariff);
-        when(tariffMapper.toDto(testTariff)).thenReturn(responseDto);
+        when(tariffService.getTariffDtoByName("Standard")).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/tariffs/name/{name}", "Standard"))
                 .andExpect(status().isOk())
@@ -92,8 +74,7 @@ class TariffControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/tariffs - Получение всех тарифов")
     void getAllTariffs_Success() throws Exception {
-        when(tariffService.findAllTariffs()).thenReturn(List.of(testTariff));
-        when(tariffMapper.toDtos(any())).thenReturn(List.of(responseDto));
+        when(tariffService.findAllTariffs()).thenReturn(List.of(responseDto));
 
         mockMvc.perform(get("/api/tariffs"))
                 .andExpect(status().isOk())
@@ -107,8 +88,7 @@ class TariffControllerTest extends BaseControllerTest {
         TariffUpdateDto updateDto = new TariffUpdateDto();
         updateDto.setName("Updated Name");
 
-        when(tariffService.updateTariff(eq(1L), any(TariffUpdateDto.class))).thenReturn(testTariff);
-        when(tariffMapper.toDto(testTariff)).thenReturn(responseDto);
+        when(tariffService.updateTariff(eq(1L), any(TariffUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(patch("/api/tariffs/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)

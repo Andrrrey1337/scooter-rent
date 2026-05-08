@@ -28,8 +28,6 @@ class PromoCodeControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private PromoCodeService promoCodeService;
-    @MockitoBean
-    private PromoCodeMapper promoCodeMapper;
 
     private PromoCode promoCode;
     private PromoCodeResponseDto responseDto;
@@ -52,9 +50,7 @@ class PromoCodeControllerTest extends BaseControllerTest {
         createDto.setCode("SALE50");
         createDto.setDiscount(50);
 
-        when(promoCodeMapper.toEntity(any(PromoCodeCreateDto.class))).thenReturn(promoCode);
-        when(promoCodeService.createPromoCode(any(PromoCode.class))).thenReturn(promoCode);
-        when(promoCodeMapper.toDto(any(PromoCode.class))).thenReturn(responseDto);
+        when(promoCodeService.createPromoCode(any(PromoCodeCreateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/promocodes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -66,8 +62,7 @@ class PromoCodeControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/promocodes - Все промокоды (Админ)")
     void getAll_ReturnsOk() throws Exception {
-        when(promoCodeService.findAllPromoCodes()).thenReturn(Collections.singletonList(promoCode));
-        when(promoCodeMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
+        when(promoCodeService.findAllPromoCodes()).thenReturn(Collections.singletonList(responseDto));
 
         mockMvc.perform(get("/api/promocodes"))
                 .andExpect(status().isOk())
@@ -77,8 +72,7 @@ class PromoCodeControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/promocodes/{id} - По ID (Админ)")
     void getPromoCodeById_ReturnsOk() throws Exception {
-        when(promoCodeService.findPromoCodeById(1L)).thenReturn(promoCode);
-        when(promoCodeMapper.toDto(promoCode)).thenReturn(responseDto);
+        when(promoCodeService.getDtoById(1L)).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/promocodes/1"))
                 .andExpect(status().isOk())
@@ -91,8 +85,7 @@ class PromoCodeControllerTest extends BaseControllerTest {
         PromoCodeUpdateDto updateDto = new PromoCodeUpdateDto();
         updateDto.setCode("NEWCODE");
 
-        when(promoCodeService.updatePromoCode(eq(1L), any(PromoCodeUpdateDto.class))).thenReturn(promoCode);
-        when(promoCodeMapper.toDto(promoCode)).thenReturn(responseDto);
+        when(promoCodeService.updatePromoCode(eq(1L), any(PromoCodeUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(patch("/api/promocodes/1")
                         .contentType(MediaType.APPLICATION_JSON)

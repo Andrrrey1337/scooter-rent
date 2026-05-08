@@ -1,6 +1,8 @@
 package org.example.service;
 
 import org.example.dto.promocode.PromoCodeUpdateDto;
+import org.example.dto.promocode.PromoCodeCreateDto;
+import org.example.dto.promocode.PromoCodeResponseDto;
 import org.example.entity.PromoCode;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -33,6 +35,7 @@ class PromoCodeServiceTest {
     private PromoCodeService promoCodeService;
 
     private PromoCode promoCode;
+    private PromoCodeResponseDto promoCodeResponseDto;
     private Long id = 1L;
     private String code = "SALE50";
 
@@ -42,15 +45,23 @@ class PromoCodeServiceTest {
         promoCode.setId(id);
         promoCode.setCode(code);
         promoCode.setDiscount(50);
+        promoCodeResponseDto = new PromoCodeResponseDto();
+        promoCodeResponseDto.setId(id);
+        promoCodeResponseDto.setCode(code);
+        promoCodeResponseDto.setDiscount(50);
     }
 
     @Test
     @DisplayName("createPromoCode - Успех")
     void createPromoCode_Success() {
+        PromoCodeCreateDto createDto = new PromoCodeCreateDto();
+        createDto.setCode(code);
+        createDto.setDiscount(50);
+        when(promoCodeMapper.toEntity(createDto)).thenReturn(promoCode);
         when(promoCodeRepository.findByCode(code)).thenReturn(Optional.empty());
         when(promoCodeRepository.create(promoCode)).thenReturn(promoCode);
-
-        PromoCode result = promoCodeService.createPromoCode(promoCode);
+        when(promoCodeMapper.toDto(promoCode)).thenReturn(promoCodeResponseDto);
+        PromoCodeResponseDto result = promoCodeService.createPromoCode(createDto);
 
         assertNotNull(result);
         assertEquals(code, result.getCode());
@@ -60,15 +71,20 @@ class PromoCodeServiceTest {
     @Test
     @DisplayName("createPromoCode - Уже существует")
     void createPromoCode_AlreadyExists_ThrowsBusinessException() {
+        PromoCodeCreateDto createDto = new PromoCodeCreateDto();
+        createDto.setCode(code);
+        createDto.setDiscount(50);
+        when(promoCodeMapper.toEntity(createDto)).thenReturn(promoCode);
         when(promoCodeRepository.findByCode(code)).thenReturn(Optional.of(promoCode));
-        assertThrows(BusinessException.class, () -> promoCodeService.createPromoCode(promoCode));
+        assertThrows(BusinessException.class, () -> promoCodeService.createPromoCode(createDto));
     }
 
     @Test
     @DisplayName("findPromoCodeById - Успех")
     void findPromoCodeById_Success() {
         when(promoCodeRepository.findById(id)).thenReturn(Optional.of(promoCode));
-        PromoCode result = promoCodeService.findPromoCodeById(id);
+        when(promoCodeMapper.toDto(promoCode)).thenReturn(promoCodeResponseDto);
+        PromoCodeResponseDto result = promoCodeService.getDtoById(id);
         assertEquals(id, result.getId());
     }
 
@@ -76,14 +92,16 @@ class PromoCodeServiceTest {
     @DisplayName("findPromoCodeById - Не найден")
     void findPromoCodeById_NotFound_ThrowsResourceNotFoundException() {
         when(promoCodeRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> promoCodeService.findPromoCodeById(id));
+        assertThrows(ResourceNotFoundException.class, () -> promoCodeService.getDtoById(id));
     }
 
     @Test
     @DisplayName("findAllPromoCodes - Успех")
     void findAllPromoCodes_Success() {
         when(promoCodeRepository.findAll()).thenReturn(Collections.singletonList(promoCode));
-        List<PromoCode> result = promoCodeService.findAllPromoCodes();
+        PromoCodeResponseDto dto = new PromoCodeResponseDto();
+        when(promoCodeMapper.toDtos(any())).thenReturn(Collections.singletonList(dto));
+        List<PromoCodeResponseDto> result = promoCodeService.findAllPromoCodes();
         assertEquals(1, result.size());
     }
 
@@ -104,7 +122,6 @@ class PromoCodeServiceTest {
     @Test
     @DisplayName("deletePromoCode - Успех")
     void deletePromoCode_Success() {
-        when(promoCodeRepository.findById(id)).thenReturn(Optional.of(promoCode));
         promoCodeService.deletePromoCode(id);
         verify(promoCodeRepository).deleteById(id);
     }

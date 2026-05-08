@@ -2,6 +2,8 @@ package org.example.service;
 
 import org.example.dto.user.UserAdminUpdateDto;
 import org.example.dto.user.UserUpdateDto;
+import org.example.dto.user.UserCreateDto;
+import org.example.dto.user.UserResponseDto;
 import org.example.entity.Role;
 import org.example.entity.User;
 import org.example.exception.BusinessException;
@@ -35,6 +37,8 @@ class UserServiceTest {
     private UserService userService;
 
     private User user;
+    private UserResponseDto responseDto;
+
     private Long userId = 1L;
     private String username = "testuser";
 
@@ -47,16 +51,29 @@ class UserServiceTest {
         user.setBalance(BigDecimal.ZERO);
         user.setRole(Role.USER);
         user.setIsActive(true);
+        responseDto = new UserResponseDto();
+        responseDto.setId(userId);
+        responseDto.setUsername(username);
+        responseDto.setBalance(BigDecimal.ZERO);
+        responseDto.setRole(Role.USER);
     }
 
     @Test
     @DisplayName("registerUser - Успех")
     void registerUser_Success() {
+        UserCreateDto createDto = new UserCreateDto();
+        createDto.setUsername(username);
+        createDto.setPassword("password");
+
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
         when(passwordEncoder.encode(any())).thenReturn("encodedPassword");
+        when(userMapper.toEntity(any(UserCreateDto.class))).thenReturn(user);
         when(userRepository.create(any(User.class))).thenReturn(user);
+        UserResponseDto responseDto = new UserResponseDto();
+        responseDto.setRole(Role.USER);
+        when(userMapper.toDto(user)).thenReturn(responseDto);
 
-        User result = userService.registerUser(user);
+        UserResponseDto result = userService.registerUser(createDto);
 
         assertNotNull(result);
         assertEquals(Role.USER, result.getRole());
@@ -66,30 +83,36 @@ class UserServiceTest {
     @Test
     @DisplayName("registerUser - Пользователь уже существует")
     void registerUser_AlreadyExists_ThrowsBusinessException() {
+        UserCreateDto createDto = new UserCreateDto();
+        createDto.setUsername(username);
+        createDto.setPassword("password");
+        when(userMapper.toEntity(any(UserCreateDto.class))).thenReturn(user);
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        assertThrows(BusinessException.class, () -> userService.registerUser(user));
+        assertThrows(BusinessException.class, () -> userService.registerUser(createDto));
     }
 
     @Test
-    @DisplayName("findById - Успех")
-    void findById_Success() {
+    @DisplayName("getDtoById - Успех")
+    void getDtoById_Success() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        User result = userService.findById(userId);
+        when(userMapper.toDto(user)).thenReturn(responseDto);
+        UserResponseDto result = userService.getDtoById(userId);
         assertEquals(userId, result.getId());
     }
 
     @Test
-    @DisplayName("findById - Не найден")
-    void findById_NotFound_ThrowsResourceNotFoundException() {
+    @DisplayName("getDtoById - Не найден")
+    void getDtoById_NotFound_ThrowsResourceNotFoundException() {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> userService.findById(userId));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getDtoById(userId));
     }
 
     @Test
     @DisplayName("findByUsername - Успех")
     void findByUsername_Success() {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        User result = userService.findByUsername(username);
+        when(userMapper.toDto(user)).thenReturn(responseDto);
+        UserResponseDto result = userService.findByUsername(username);
         assertEquals(username, result.getUsername());
     }
 
@@ -97,8 +120,11 @@ class UserServiceTest {
     @DisplayName("addBalance - Успех")
     void addBalance_Success() {
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        UserResponseDto updatedDto = new UserResponseDto();
+        updatedDto.setBalance(new BigDecimal("100.00"));
+        when(userMapper.toDto(user)).thenReturn(updatedDto);
         BigDecimal amount = new BigDecimal("100.00");
-        User result = userService.addBalance(userId, amount);
+        UserResponseDto result = userService.addBalance(userId, amount);
         assertEquals(new BigDecimal("100.00"), result.getBalance());
     }
 
@@ -115,6 +141,7 @@ class UserServiceTest {
         updateDto.setUsername("newUsername");
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(userRepository.findByUsername("newUsername")).thenReturn(Optional.empty());
+        when(userMapper.toDto(user)).thenReturn(responseDto);
 
         userService.updateUser(userId, updateDto);
 
@@ -145,6 +172,7 @@ class UserServiceTest {
     void updateAdminFields_Success() {
         UserAdminUpdateDto adminDto = new UserAdminUpdateDto();
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userMapper.toDto(user)).thenReturn(responseDto);
 
         userService.updateAdminFields(userId, adminDto);
 

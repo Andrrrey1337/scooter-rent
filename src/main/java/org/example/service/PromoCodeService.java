@@ -2,6 +2,8 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.promocode.PromoCodeCreateDto;
+import org.example.dto.promocode.PromoCodeResponseDto;
 import org.example.dto.promocode.PromoCodeUpdateDto;
 import org.example.entity.PromoCode;
 import org.example.exception.BusinessException;
@@ -21,15 +23,16 @@ public class PromoCodeService {
     private final PromoCodeRepository promoCodeRepository;
     private final PromoCodeMapper promoCodeMapper;
 
-    public PromoCode createPromoCode(PromoCode promoCode){
+    public PromoCodeResponseDto createPromoCode(PromoCodeCreateDto dto){
+        PromoCode promoCode = promoCodeMapper.toEntity(dto);
         if (promoCodeRepository.findByCode(promoCode.getCode()).isPresent()){
             throw new BusinessException("Промокод " + promoCode.getCode() + " уже существует");
         }
         log.info("Создан новый промокод: {}", promoCode.getCode());
-        return promoCodeRepository.create(promoCode);
+        return promoCodeMapper.toDto(promoCodeRepository.create(promoCode));
     }
 
-    public PromoCode findPromoCodeById(Long id){
+    public PromoCode findEntityById(Long id){
         PromoCode promoCode = promoCodeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
 
@@ -37,20 +40,23 @@ public class PromoCodeService {
         return promoCode;
     }
 
-    public List<PromoCode> findAllPromoCodes() {
+    public PromoCodeResponseDto getDtoById(Long id){
+        return promoCodeMapper.toDto(findEntityById(id));
+    }
+
+    public List<PromoCodeResponseDto> findAllPromoCodes() {
         List<PromoCode> promoCodes = promoCodeRepository.findAll();
         log.info("Получен список всех промокодов. Количество: {}", promoCodes.size());
-        return promoCodes;
+        return promoCodeMapper.toDtos(promoCodes);
     }
 
     public void deletePromoCode(Long id){
-        findPromoCodeById(id);
         promoCodeRepository.deleteById(id);
         log.info("Промокод с ID {} успешно удален", id);
     }
 
-    public PromoCode updatePromoCode(Long id, PromoCodeUpdateDto promoCodeUpdateDto){
-        PromoCode promoCode = findPromoCodeById(id);
+    public PromoCodeResponseDto updatePromoCode(Long id, PromoCodeUpdateDto promoCodeUpdateDto){
+        PromoCode promoCode = findEntityById(id);
 
         if (promoCodeUpdateDto.getCode() != null && !promoCodeUpdateDto.getCode().equals(promoCode.getCode())
                 && promoCodeRepository.findByCode(promoCodeUpdateDto.getCode()).isPresent()) {
@@ -60,10 +66,6 @@ public class PromoCodeService {
         promoCodeMapper.updatePromoCode(promoCodeUpdateDto, promoCode);
         log.info("Данные промокода с ID {} успешно обновлены", id);
 
-        return promoCode;
+        return promoCodeMapper.toDto(promoCode);
     }
-
-
-
-
 }

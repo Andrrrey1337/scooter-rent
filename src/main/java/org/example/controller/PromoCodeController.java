@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.dto.promocode.PromoCodeCreateDto;
 import org.example.dto.promocode.PromoCodeResponseDto;
 import org.example.dto.promocode.PromoCodeUpdateDto;
-import org.example.entity.PromoCode;
-import org.example.mapper.PromoCodeMapper;
 import org.example.service.PromoCodeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,32 +22,33 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class PromoCodeController {
     private final PromoCodeService promoCodeService;
-    private final PromoCodeMapper promoCodeMapper;
 
     @PostMapping()
     @Operation(summary = "Создать новый промокод")
     public ResponseEntity<PromoCodeResponseDto> create(@Valid @RequestBody PromoCodeCreateDto promoCodeCreateDto) {
-        PromoCode promoCode = promoCodeService.createPromoCode(promoCodeMapper.toEntity(promoCodeCreateDto));
-        return new ResponseEntity<>(promoCodeMapper.toDto(promoCode), HttpStatus.CREATED);
+        PromoCodeResponseDto promoCode = promoCodeService.createPromoCode(promoCodeCreateDto);
+        return new ResponseEntity<>(promoCode, HttpStatus.CREATED);
     }
 
     @GetMapping
     @Operation(summary = "Получить все промокоды")
-    public List<PromoCodeResponseDto> getAll() {
-        return promoCodeMapper.toDtos(promoCodeService.findAllPromoCodes());
+    public ResponseEntity<List<PromoCodeResponseDto>> getAll() {
+        List<PromoCodeResponseDto> promoCodes = promoCodeService.findAllPromoCodes();
+        return ResponseEntity.ok(promoCodes);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Получить промокод по его id")
-    public PromoCodeResponseDto getPromoCodeById(@PathVariable Long id) {
-        return promoCodeMapper.toDto(promoCodeService.findPromoCodeById(id));
+    public ResponseEntity<PromoCodeResponseDto> getPromoCodeById(@PathVariable Long id) {
+        PromoCodeResponseDto promoCode = promoCodeService.getDtoById(id);
+        return ResponseEntity.ok(promoCode);
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Обновить промокод")
     public ResponseEntity<PromoCodeResponseDto> update(@PathVariable Long id, @Valid @RequestBody PromoCodeUpdateDto dto) {
-        PromoCode entity = promoCodeService.updatePromoCode(id, dto);
-        return ResponseEntity.ok(promoCodeMapper.toDto(entity));
+        PromoCodeResponseDto promoCode = promoCodeService.updatePromoCode(id, dto);
+        return ResponseEntity.ok(promoCode);
     }
 
     @DeleteMapping("/{id}")

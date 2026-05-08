@@ -7,8 +7,6 @@ import jakarta.validation.Valid;
 import org.example.dto.scooterModel.ScooterModelCreateDto;
 import org.example.dto.scooterModel.ScooterModelResponseDto;
 import org.example.dto.scooterModel.ScooterModelUpdateDto;
-import org.example.entity.ScooterModel;
-import org.example.mapper.ScooterModelMapper;
 import org.example.service.ScooterModelService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,36 +21,35 @@ import java.util.List;
 @Tag(name = "Модели самокатов", description = "Управление типами и характеристиками самокатов")
 public class ScooterModelController {
     private final ScooterModelService scooterModelService;
-    private final ScooterModelMapper scooterModelMapper;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Создать новую модель самоката")
     public ResponseEntity<ScooterModelResponseDto> createScooterModel(@Valid @RequestBody ScooterModelCreateDto scooterModelCreateDto) {
-        ScooterModel scooterModel = scooterModelService.createScooterModel(scooterModelMapper.toEntity(scooterModelCreateDto));
-        return new ResponseEntity<>(scooterModelMapper.toDto(scooterModel), HttpStatus.CREATED);
+        ScooterModelResponseDto scooterModel = scooterModelService.createScooterModel(scooterModelCreateDto);
+        return new ResponseEntity<>(scooterModel, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Получить информацию о модели по ID")
     public ResponseEntity<ScooterModelResponseDto> getScooterModelById(@PathVariable Long id) {
-        ScooterModel scooterModel = scooterModelService.findScooterModelById(id);
-        return ResponseEntity.ok(scooterModelMapper.toDto(scooterModel));
+        ScooterModelResponseDto scooterModel = scooterModelService.getScooterModelDtoById(id);
+        return ResponseEntity.ok(scooterModel);
     }
 
     @GetMapping
     @Operation(summary = "Получить список всех доступных моделей")
     public ResponseEntity<List<ScooterModelResponseDto>> getAllScooterModels() {
-        List<ScooterModel> scooterModels = scooterModelService.findAllScooterModel();
-        return ResponseEntity.ok(scooterModelMapper.toDtos(scooterModels));
+        List<ScooterModelResponseDto> scooterModels = scooterModelService.findAllScooterModels();
+        return ResponseEntity.ok(scooterModels);
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновить характеристики модели")
     public ResponseEntity<ScooterModelResponseDto> updateScooterModel(@PathVariable Long id, @Valid @RequestBody ScooterModelUpdateDto scooterModelUpdateDto) {
-        ScooterModel scooterModel = scooterModelService.updateScooterModel(id, scooterModelUpdateDto);
-        return ResponseEntity.ok(scooterModelMapper.toDto(scooterModel));
+        ScooterModelResponseDto scooterModel = scooterModelService.updateScooterModel(id, scooterModelUpdateDto);
+        return ResponseEntity.ok(scooterModel);
     }
 
     @DeleteMapping("/{id}")

@@ -1,11 +1,12 @@
 package org.example.service;
 
 import org.example.dto.subscription.SubscriptionUpdateDto;
+import org.example.dto.subscription.SubscriptionCreateDto;
+import org.example.dto.subscription.SubscriptionResponseDto;
 import org.example.entity.Subscription;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.SubscriptionMapper;
 import org.example.repository.SubscriptionRepository;
-import org.example.service.SubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,8 @@ class SubscriptionServiceTest {
     private SubscriptionService subscriptionService;
 
     private Subscription subscription;
+    private SubscriptionResponseDto responseDto;
+
     private Long id = 1L;
 
     @BeforeEach
@@ -39,15 +42,22 @@ class SubscriptionServiceTest {
         subscription = new Subscription();
         subscription.setId(id);
         subscription.setName("Monthly");
+        responseDto = new SubscriptionResponseDto();
+        responseDto.setId(id);
+        responseDto.setName("Monthly");
     }
 
     @Test
     @DisplayName("createSubscription - Успех")
     void createSubscription_Success() {
+        SubscriptionCreateDto createDto = new SubscriptionCreateDto();
+        createDto.setName("Monthly");
+        when(subscriptionMapper.toEntity(createDto)).thenReturn(subscription);
         when(subscriptionRepository.create(any(Subscription.class))).thenReturn(subscription);
-        Subscription result = subscriptionService.createSubscription(subscription);
+        when(subscriptionMapper.toDto(subscription)).thenReturn(responseDto);
+        SubscriptionResponseDto result = subscriptionService.createSubscription(createDto);
         assertNotNull(result);
-        verify(subscriptionRepository).create(subscription);
+        verify(subscriptionRepository).create(any(Subscription.class));
     }
 
     @Test
@@ -69,7 +79,8 @@ class SubscriptionServiceTest {
     @DisplayName("findAllSubscriptions - Успех")
     void findAllSubscriptions_Success() {
         when(subscriptionRepository.findAll()).thenReturn(Collections.singletonList(subscription));
-        List<Subscription> result = subscriptionService.findAllSubscriptions();
+        when(subscriptionMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
+        List<SubscriptionResponseDto> result = subscriptionService.findAllSubscriptions();
         assertEquals(1, result.size());
     }
 
@@ -78,16 +89,17 @@ class SubscriptionServiceTest {
     void updateSubscription_Success() {
         SubscriptionUpdateDto updateDto = new SubscriptionUpdateDto();
         when(subscriptionRepository.findById(id)).thenReturn(Optional.of(subscription));
+        when(subscriptionMapper.toDto(subscription)).thenReturn(responseDto);
 
-        subscriptionService.updateSubscription(id, updateDto);
+        SubscriptionResponseDto result = subscriptionService.updateSubscription(id, updateDto);
 
+        assertNotNull(result);
         verify(subscriptionMapper).updateSubscription(updateDto, subscription);
     }
 
     @Test
     @DisplayName("deleteSubscription - Успех")
     void deleteSubscription_Success() {
-        when(subscriptionRepository.findById(id)).thenReturn(Optional.of(subscription));
         subscriptionService.deleteSubscription(id);
         verify(subscriptionRepository).deleteById(id);
     }

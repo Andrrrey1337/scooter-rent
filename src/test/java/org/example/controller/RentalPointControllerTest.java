@@ -32,10 +32,6 @@ class RentalPointControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private RentalPointService rentalPointService;
-    @MockitoBean
-    private RentalPointMapper rentalPointMapper;
-    @MockitoBean
-    private ScooterMapper scooterMapper;
 
     private RentalPoint rentalPoint;
     private RentalPointResponseDto responseDto;
@@ -59,8 +55,7 @@ class RentalPointControllerTest extends BaseControllerTest {
         createDto.setLatitude(new BigDecimal("53.9000"));
         createDto.setLongitude(new BigDecimal("27.5667"));
 
-        when(rentalPointService.createRentalPoint(any(RentalPointCreateDto.class))).thenReturn(rentalPoint);
-        when(rentalPointMapper.toDto(any(RentalPoint.class))).thenReturn(responseDto);
+        when(rentalPointService.createRentalPoint(any(RentalPointCreateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/points")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,8 +67,7 @@ class RentalPointControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/points/{id} - По ID")
     void getRentalPointById_ReturnsOk() throws Exception {
-        when(rentalPointService.findRentalPointById(1L)).thenReturn(rentalPoint);
-        when(rentalPointMapper.toDto(rentalPoint)).thenReturn(responseDto);
+        when(rentalPointService.getRentalPointDtoById(1L)).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/points/1"))
                 .andExpect(status().isOk())
@@ -83,8 +77,7 @@ class RentalPointControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/points/name/{name} - По названию")
     void getRentalPointByName_ReturnsOk() throws Exception {
-        when(rentalPointService.findRentalPointByName("Point A")).thenReturn(rentalPoint);
-        when(rentalPointMapper.toDto(rentalPoint)).thenReturn(responseDto);
+        when(rentalPointService.getRentalPointDtoByName("Point A")).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/points/name/Point A"))
                 .andExpect(status().isOk())
@@ -94,8 +87,7 @@ class RentalPointControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/points - Все точки")
     void getAllRentalPoints_ReturnsOk() throws Exception {
-        when(rentalPointService.findAllRentalPoints()).thenReturn(Collections.singletonList(rentalPoint));
-        when(rentalPointMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
+        when(rentalPointService.findAllRentalPoints()).thenReturn(Collections.singletonList(responseDto));
 
         mockMvc.perform(get("/api/points"))
                 .andExpect(status().isOk())
@@ -108,8 +100,7 @@ class RentalPointControllerTest extends BaseControllerTest {
         RentalPointUpdateDto updateDto = new RentalPointUpdateDto();
         updateDto.setName("New Name");
 
-        when(rentalPointService.updateRentalPoint(eq(1L), any(RentalPointUpdateDto.class))).thenReturn(rentalPoint);
-        when(rentalPointMapper.toDto(rentalPoint)).thenReturn(responseDto);
+        when(rentalPointService.updateRentalPoint(eq(1L), any(RentalPointUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(patch("/api/points/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,8 +119,7 @@ class RentalPointControllerTest extends BaseControllerTest {
     @DisplayName("GET /api/points/scooters/{id} - Самокаты на точке (Админ)")
     void getScootersAtPointById_ReturnsOk() throws Exception {
         ScooterAdminResponseDto scooterDto = new ScooterAdminResponseDto();
-        when(rentalPointService.findAllScootersAtRentalPoint(1L)).thenReturn(Collections.emptyList());
-        when(scooterMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(scooterDto));
+        when(rentalPointService.findAllScootersAtRentalPoint(1L)).thenReturn(Collections.singletonList(scooterDto));
 
         mockMvc.perform(get("/api/points/scooters/1"))
                 .andExpect(status().isOk());

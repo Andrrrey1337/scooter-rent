@@ -29,8 +29,6 @@ class ScooterModelControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private ScooterModelService scooterModelService;
-    @MockitoBean
-    private ScooterModelMapper scooterModelMapper;
 
     private ScooterModel scooterModel;
     private ScooterModelResponseDto responseDto;
@@ -53,9 +51,7 @@ class ScooterModelControllerTest extends BaseControllerTest {
         createDto.setName("Model X");
         createDto.setPricePerMinute(new BigDecimal("5.00"));
 
-        when(scooterModelMapper.toEntity(any(ScooterModelCreateDto.class))).thenReturn(scooterModel);
-        when(scooterModelService.createScooterModel(any(ScooterModel.class))).thenReturn(scooterModel);
-        when(scooterModelMapper.toDto(any(ScooterModel.class))).thenReturn(responseDto);
+        when(scooterModelService.createScooterModel(any(ScooterModelCreateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/scooter-models")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,8 +63,7 @@ class ScooterModelControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/scooter-models/{id} - По ID")
     void getScooterModelById_ReturnsOk() throws Exception {
-        when(scooterModelService.findScooterModelById(1L)).thenReturn(scooterModel);
-        when(scooterModelMapper.toDto(scooterModel)).thenReturn(responseDto);
+        when(scooterModelService.getScooterModelDtoById(1L)).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/scooter-models/1"))
                 .andExpect(status().isOk())
@@ -78,8 +73,7 @@ class ScooterModelControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/scooter-models - Все модели")
     void getAllScooterModels_ReturnsOk() throws Exception {
-        when(scooterModelService.findAllScooterModel()).thenReturn(Collections.singletonList(scooterModel));
-        when(scooterModelMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
+        when(scooterModelService.findAllScooterModels()).thenReturn(Collections.singletonList(responseDto));
 
         mockMvc.perform(get("/api/scooter-models"))
                 .andExpect(status().isOk())
@@ -92,8 +86,7 @@ class ScooterModelControllerTest extends BaseControllerTest {
         ScooterModelUpdateDto updateDto = new ScooterModelUpdateDto();
         updateDto.setName("New Name");
 
-        when(scooterModelService.updateScooterModel(eq(1L), any(ScooterModelUpdateDto.class))).thenReturn(scooterModel);
-        when(scooterModelMapper.toDto(scooterModel)).thenReturn(responseDto);
+        when(scooterModelService.updateScooterModel(eq(1L), any(ScooterModelUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(patch("/api/scooter-models/1")
                         .contentType(MediaType.APPLICATION_JSON)

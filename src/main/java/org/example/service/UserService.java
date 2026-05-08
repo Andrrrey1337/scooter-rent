@@ -3,6 +3,8 @@ package org.example.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.user.UserAdminUpdateDto;
+import org.example.dto.user.UserCreateDto;
+import org.example.dto.user.UserResponseDto;
 import org.example.dto.user.UserUpdateDto;
 import org.example.entity.Role;
 import org.example.entity.User;
@@ -25,7 +27,8 @@ public class UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public User registerUser(User user)  {
+    public UserResponseDto registerUser(UserCreateDto dto)  {
+        User user = userMapper.toEntity(dto);
         String username = user.getUsername();
         if (userRepository.findByUsername(username).isPresent()) {
             throw new BusinessException("Пользователь с именем " + username + "' уже существует");
@@ -37,21 +40,21 @@ public class UserService {
         user = userRepository.create(user);
         log.info("Успешно зарегистрирован новый пользователь: ID={}, username={}", user.getId(), username);
 
-        return user;
+        return userMapper.toDto(user);
     }
 
     @Transactional(readOnly = true)
-    public User findByUsername(String username) {
+    public UserResponseDto findByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь с именем '" + username + " не найден"));
 
         log.info("Успешно выполнен поиск пользователя по username: {}", username);
 
-        return user;
+        return userMapper.toDto(user);
     }
 
     @Transactional(readOnly = true)
-    public User findById(Long id) {
+    public User findEntityById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь с ID " + id + " не найден"));
 
@@ -59,20 +62,25 @@ public class UserService {
         return user;
     }
 
-    public User addBalance(Long userId, BigDecimal amount) {
+    @Transactional(readOnly = true)
+    public UserResponseDto getDtoById(Long id) {
+        return userMapper.toDto(findEntityById(id));
+    }
+
+    public UserResponseDto addBalance(Long userId, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("Сумма пополнения должна быть больше нуля");
         }
-        User user = findById(userId);
+        User user = findEntityById(userId);
         user.setBalance(user.getBalance().add(amount));
 
         log.info("Баланс пользователя с ID {} успешно пополнен на {}. Текущий баланс: {}", userId, amount, user.getBalance());
 
-        return user;
+        return userMapper.toDto(user);
     }
 
-    public User updateUser(Long userId, UserUpdateDto userUpdateDto) {
-        User user = findById(userId);
+    public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
+        User user = findEntityById(userId);
 
         if (userUpdateDto.getUsername() != null && !userUpdateDto.getUsername().equals(user.getUsername())
                 && userRepository.findByUsername(userUpdateDto.getUsername()).isPresent()) {
@@ -87,17 +95,17 @@ public class UserService {
 
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
 
-        return user;
+        return userMapper.toDto(user);
     }
 
-    public User updateAdminFields(Long userId, UserAdminUpdateDto dto) {
-        User user = findById(userId);
+    public UserResponseDto updateAdminFields(Long userId, UserAdminUpdateDto dto) {
+        User user = findEntityById(userId);
 
         userMapper.updateEntity(dto, user);
 
         log.info("Изменены права/статус пользователя с ID={}. Новая роль: {}, Активен: {}",
                 user.getId(), user.getRole(), user.getIsActive());
 
-        return user;
+        return userMapper.toDto(user);
     }
 }

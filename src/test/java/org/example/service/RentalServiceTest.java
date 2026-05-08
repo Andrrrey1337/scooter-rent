@@ -2,9 +2,12 @@ package org.example.service;
 
 import org.example.dto.rental.FinishRentalDto;
 import org.example.dto.rental.StartRentalDto;
+import org.example.dto.rental.RentalResponseDto;
+import org.example.dto.rental.RentalAdminResponseDto;
 import org.example.entity.*;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
+import org.example.mapper.RentalMapper;
 import org.example.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +41,7 @@ class RentalServiceTest {
     @Mock private PromoCodeRepository promoCodeRepository;
     @Mock private UserSubscriptionRepository userSubscriptionRepository;
     @Mock private RentalPointRepository rentalPointRepository;
+    @Mock private RentalMapper rentalMapper;
 
     @InjectMocks
     private RentalService rentalService;
@@ -46,6 +50,9 @@ class RentalServiceTest {
     private Scooter scooter;
     private Tariff tariff;
     private Rental rental;
+    private RentalResponseDto responseDto;
+    private RentalAdminResponseDto adminResponseDto;
+
 
     @BeforeEach
     void setUp() {
@@ -78,6 +85,9 @@ class RentalServiceTest {
                 .startTime(LocalDateTime.now().minusMinutes(10))
                 .isActive(true)
                 .build();
+        responseDto = new RentalResponseDto();
+        responseDto.setId(1L);
+        adminResponseDto = new RentalAdminResponseDto();
 
         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
@@ -95,8 +105,9 @@ class RentalServiceTest {
         when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
         when(rentalRepository.create(any(Rental.class))).thenReturn(rental);
+        when(rentalMapper.toDto(rental)).thenReturn(responseDto);
 
-        Rental result = rentalService.startRental(startDto);
+        RentalResponseDto result = rentalService.startRental(startDto);
 
         assertNotNull(result);
         assertEquals(ScooterStatus.RENTED, scooter.getScooterStatus());
@@ -121,6 +132,8 @@ class RentalServiceTest {
     void startRental_ScooterNotAvailable_ThrowsBusinessException() {
         // самокат сейчас занят кем-то другим
         scooter.setScooterStatus(ScooterStatus.RENTED);
+        when(tariffService.findTariffById(1L)).thenReturn(tariff);
+        when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
         when(scooterService.findScooterById(1L)).thenReturn(scooter);
 
         StartRentalDto startDto = new StartRentalDto();
@@ -136,6 +149,7 @@ class RentalServiceTest {
         scooter.setScooterStatus(ScooterStatus.AVAILABLE);
         when(scooterService.findScooterById(1L)).thenReturn(scooter);
         when(tariffService.findTariffById(1L)).thenReturn(tariff);
+        when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
 
         // нет подписки с бесплатным стартом
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
@@ -156,6 +170,8 @@ class RentalServiceTest {
         when(scooterService.findScooterById(1L)).thenReturn(scooter);
 
         when(tariffService.findTariffById(1L)).thenReturn(tariff);
+        when(rentalRepository.findActiveRentalByUserId(1L)).thenReturn(Optional.empty());
+        when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
 
         StartRentalDto startDto = new StartRentalDto();
         startDto.setUserId(1L);
@@ -180,11 +196,11 @@ class RentalServiceTest {
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
         when(rentalPointRepository.findNearestValidParkingPoint(any(), any(), anyDouble()))
                 .thenReturn(Optional.of(new RentalPoint()));
+        when(rentalMapper.toDto(rental)).thenReturn(responseDto);
 
-        Rental result = rentalService.finishRental(1L, finishDto);
+        RentalResponseDto result = rentalService.finishRental(1L, finishDto);
 
         assertNotNull(result);
-        assertFalse(result.getIsActive());
         assertEquals(ScooterStatus.AVAILABLE, scooter.getScooterStatus());
         assertEquals(80, scooter.getBatteryLevel());
         verify(userRepository).update(user);
@@ -210,10 +226,11 @@ class RentalServiceTest {
     @Test
     @DisplayName("findRentalsByUserId - Успех")
     void findRentalsByUserId_Success() {
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findEntityById(1L)).thenReturn(user);
         when(rentalRepository.findAllByUserId(1L)).thenReturn(Collections.singletonList(rental));
+        when(rentalMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
 
-        List<Rental> result = rentalService.findRentalsByUserId(1L);
+        List<RentalResponseDto> result = rentalService.findRentalsByUserId(1L);
 
         assertEquals(1, result.size());
     }
@@ -223,8 +240,9 @@ class RentalServiceTest {
     void findRentalsByScooterId_Success() {
         when(scooterRepository.findById(1L)).thenReturn(Optional.of(scooter));
         when(rentalRepository.findByScooterId(1L)).thenReturn(Collections.singletonList(rental));
+        when(rentalMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(adminResponseDto));
 
-        List<Rental> result = rentalService.findRentalsByScooterId(1L);
+        List<RentalAdminResponseDto> result = rentalService.findRentalsByScooterId(1L);
 
         assertEquals(1, result.size());
     }

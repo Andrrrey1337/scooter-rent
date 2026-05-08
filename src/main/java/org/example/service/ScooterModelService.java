@@ -2,6 +2,8 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.scooterModel.ScooterModelCreateDto;
+import org.example.dto.scooterModel.ScooterModelResponseDto;
 import org.example.dto.scooterModel.ScooterModelUpdateDto;
 import org.example.entity.ScooterModel;
 import org.example.exception.BusinessException;
@@ -21,7 +23,8 @@ public class ScooterModelService {
     private final ScooterModelRepository scooterModelRepository;
     private final ScooterModelMapper scooterModelMapper;
 
-    public ScooterModel createScooterModel(ScooterModel scooterModel) {
+    public ScooterModelResponseDto createScooterModel(ScooterModelCreateDto dto) {
+        ScooterModel scooterModel = scooterModelMapper.toEntity(dto);
         if (scooterModelRepository.findByName(scooterModel.getName()).isPresent()) {
             throw new BusinessException("Модель самоката с названием '" + scooterModel.getName() + "' уже существует");
         }
@@ -31,7 +34,7 @@ public class ScooterModelService {
         log.info("Успешно добавлена новая модель самоката: ID={}, название='{}'",
                 scooterModelNew.getId(), scooterModelNew.getName());
 
-        return scooterModelNew;
+        return scooterModelMapper.toDto(scooterModelNew);
     }
 
     @Transactional(readOnly = true)
@@ -45,15 +48,20 @@ public class ScooterModelService {
     }
 
     @Transactional(readOnly = true)
-    public List<ScooterModel> findAllScooterModel() {
+    public ScooterModelResponseDto getScooterModelDtoById(Long id) {
+        return scooterModelMapper.toDto(findScooterModelById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScooterModelResponseDto> findAllScooterModels() {
         List<ScooterModel>  scooterModels = scooterModelRepository.findAll();
 
         log.info("Получен список всех моделей самокатов. Количество записей: {}", scooterModels.size());
 
-        return scooterModels;
+        return scooterModelMapper.toDtos(scooterModels);
     }
 
-    public ScooterModel updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
+    public ScooterModelResponseDto updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = findScooterModelById(id);
 
         if (scooterModelUpdateDto.getName() != null && !scooterModelUpdateDto.getName().equals(scooterModel.getName())
@@ -65,11 +73,10 @@ public class ScooterModelService {
 
         log.info("Данные модели самоката с ID {} успешно обновлены", scooterModel.getId());
 
-        return scooterModel;
+        return scooterModelMapper.toDto(scooterModel);
     }
 
     public void deleteScooterModelById(Long id) {
-        findScooterModelById(id);
         scooterModelRepository.deleteById(id);
         log.info("Модель самоката с ID {} успешно удалена", id);
     }

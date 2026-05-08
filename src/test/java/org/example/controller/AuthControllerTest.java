@@ -44,9 +44,7 @@ class AuthControllerTest extends BaseControllerTest {
         UserResponseDto responseDto = new UserResponseDto();
         responseDto.setUsername("testuser");
 
-        when(userMapper.toEntity(any(UserCreateDto.class))).thenReturn(user);
-        when(userService.registerUser(any(User.class))).thenReturn(user);
-        when(userMapper.toDto(any(User.class))).thenReturn(responseDto);
+        when(userService.registerUser(any(UserCreateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -30,8 +30,6 @@ class ScooterControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private ScooterService scooterService;
-    @MockitoBean
-    private ScooterMapper scooterMapper;
 
     private Scooter scooter;
     private ScooterResponseDto scooterResponseDto;
@@ -63,8 +61,7 @@ class ScooterControllerTest extends BaseControllerTest {
         createDto.setLatitude(new BigDecimal("53.9"));
         createDto.setLongitude(new BigDecimal("27.5"));
 
-        when(scooterService.createScooter(any(ScooterCreateDto.class))).thenReturn(scooter);
-        when(scooterMapper.toAdminDto(any(Scooter.class))).thenReturn(scooterAdminResponseDto);
+        when(scooterService.createScooter(any(ScooterCreateDto.class))).thenReturn(scooterAdminResponseDto);
 
         mockMvc.perform(post("/api/scooters")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -76,8 +73,7 @@ class ScooterControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/scooters/{id} - По ID (Админ)")
     void getScooterById_ReturnsOk() throws Exception {
-        when(scooterService.findScooterById(1L)).thenReturn(scooter);
-        when(scooterMapper.toAdminDto(scooter)).thenReturn(scooterAdminResponseDto);
+        when(scooterService.getScooterAdminDtoById(1L)).thenReturn(scooterAdminResponseDto);
 
         mockMvc.perform(get("/api/scooters/1"))
                 .andExpect(status().isOk())
@@ -87,8 +83,7 @@ class ScooterControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/scooters/number/{number} - По номеру")
     void getScooterByNumber_ReturnsOk() throws Exception {
-        when(scooterService.findScooterBySerialNumber("SN123")).thenReturn(scooter);
-        when(scooterMapper.toDto(scooter)).thenReturn(scooterResponseDto);
+        when(scooterService.getScooterDtoBySerialNumber("SN123")).thenReturn(scooterResponseDto);
 
         mockMvc.perform(get("/api/scooters/number/SN123"))
                 .andExpect(status().isOk())
@@ -98,8 +93,7 @@ class ScooterControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/scooters/available - Доступные на точке")
     void getAvailableScooters_ReturnsOk() throws Exception {
-        when(scooterService.findAvailableScooters(eq(1L), any())).thenReturn(Collections.singletonList(scooter));
-        when(scooterMapper.toDtos(any())).thenReturn(Collections.singletonList(scooterResponseDto));
+        when(scooterService.findAvailableScooters(eq(1L), any())).thenReturn(Collections.singletonList(scooterResponseDto));
 
         mockMvc.perform(get("/api/scooters/available")
                         .param("pointId", "1"))
@@ -120,8 +114,7 @@ class ScooterControllerTest extends BaseControllerTest {
         ScooterUpdateDto updateDto = new ScooterUpdateDto();
         updateDto.setLatitude(new BigDecimal("53.9100"));
         updateDto.setLongitude(new BigDecimal("27.5700"));
-        when(scooterService.updateScooter(eq(1L), any(ScooterUpdateDto.class))).thenReturn(scooter);
-        when(scooterMapper.toAdminDto(scooter)).thenReturn(scooterAdminResponseDto);
+        when(scooterService.updateScooter(eq(1L), any(ScooterUpdateDto.class))).thenReturn(scooterAdminResponseDto);
 
         mockMvc.perform(patch("/api/scooters/1")
                         .contentType(MediaType.APPLICATION_JSON)

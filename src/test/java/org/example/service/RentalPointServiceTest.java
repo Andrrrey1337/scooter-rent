@@ -3,6 +3,8 @@ package org.example.service;
 import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointUpdateDto;
+import org.example.dto.point.RentalPointResponseDto;
+import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
 import org.example.entity.ScooterModel;
@@ -41,6 +43,8 @@ class RentalPointServiceTest {
     private RentalPointService rentalPointService;
 
     private RentalPoint rentalPoint;
+    private RentalPointResponseDto rentalPointResponseDto;
+    private ScooterAdminResponseDto scooterAdminResponseDto;
     private Long id = 1L;
     private String name = "Point A";
 
@@ -50,6 +54,10 @@ class RentalPointServiceTest {
         rentalPoint.setId(id);
         rentalPoint.setName(name);
         rentalPoint.setCity("Минск");
+        rentalPointResponseDto = new RentalPointResponseDto();
+        rentalPointResponseDto.setId(id);
+        rentalPointResponseDto.setName(name);
+        scooterAdminResponseDto = new ScooterAdminResponseDto();
     }
 
     @Test
@@ -62,8 +70,9 @@ class RentalPointServiceTest {
         when(rentalPointRepository.findRentalPointByName(name)).thenReturn(Optional.empty());
         when(rentalPointMapper.toEntity(dto)).thenReturn(rentalPoint);
         when(rentalPointRepository.create(rentalPoint)).thenReturn(rentalPoint);
+        when(rentalPointMapper.toDto(rentalPoint)).thenReturn(rentalPointResponseDto);
 
-        RentalPoint result = rentalPointService.createRentalPoint(dto);
+        RentalPointResponseDto result = rentalPointService.createRentalPoint(dto);
 
         assertNotNull(result);
         assertEquals(name, result.getName());
@@ -114,7 +123,8 @@ class RentalPointServiceTest {
     @DisplayName("findAllRentalPoints - Успех")
     void findAllRentalPoints_Success() {
         when(rentalPointRepository.findAll()).thenReturn(Collections.singletonList(rentalPoint));
-        List<RentalPoint> result = rentalPointService.findAllRentalPoints();
+        when(rentalPointMapper.toDtos(any())).thenReturn(Collections.singletonList(rentalPointResponseDto));
+        List<RentalPointResponseDto> result = rentalPointService.findAllRentalPoints();
         assertEquals(1, result.size());
     }
 
@@ -198,11 +208,10 @@ class RentalPointServiceTest {
     @Test
     @DisplayName("deleteById - Успех")
     void deleteById_Success() {
-        when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
 
         rentalPointService.deleteById(id);
 
-        verify(rentalPointRepository, times(1)).deleteById(id);
+        verify(rentalPointRepository).deleteById(id);
     }
 
     @Test
@@ -211,8 +220,9 @@ class RentalPointServiceTest {
         Scooter scooter = new Scooter();
         when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
         when(scooterRepository.findAllByRentalPoint(id)).thenReturn(Collections.singletonList(scooter));
+        when(scooterMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(scooterAdminResponseDto));
 
-        List<Scooter> result = rentalPointService.findAllScootersAtRentalPoint(id);
+        List<ScooterAdminResponseDto> result = rentalPointService.findAllScootersAtRentalPoint(id);
 
         assertEquals(1, result.size());
         verify(scooterRepository, times(1)).findAllByRentalPoint(id);
@@ -230,6 +240,7 @@ class RentalPointServiceTest {
 
         when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
         when(scooterRepository.findAllByRentalPoint(id)).thenReturn(Collections.singletonList(scooter));
+        when(scooterMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(scooterAdminResponseDto));
 
         RentalPointDataDto result = rentalPointService.getRentalPointDataById(id);
 

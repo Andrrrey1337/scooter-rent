@@ -2,6 +2,8 @@ package org.example.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.dto.tariff.TariffCreateDto;
+import org.example.dto.tariff.TariffResponseDto;
 import org.example.dto.tariff.TariffUpdateDto;
 import org.example.entity.Tariff;
 import org.example.exception.BusinessException;
@@ -21,7 +23,8 @@ public class TariffService {
     private final TariffRepository tariffRepository;
     private final TariffMapper tariffMapper;
 
-    public Tariff createTariff(Tariff tariff) {
+    public TariffResponseDto createTariff(TariffCreateDto dto) {
+        Tariff tariff = tariffMapper.toEntity(dto);
         if (tariffRepository.findByName(tariff.getName()).isPresent()) {
             throw new BusinessException("Тариф с названием '" + tariff.getName() + "' уже существует");
         }
@@ -30,7 +33,7 @@ public class TariffService {
         log.info("Успешно создан новый тариф: ID={}, название='{}', цена={}",
                 tariff.getId(), tariff.getName(), tariff.getPrice());
 
-        return tariff;
+        return tariffMapper.toDto(tariff);
     }
 
     @Transactional(readOnly = true)
@@ -52,14 +55,14 @@ public class TariffService {
     }
 
     @Transactional(readOnly = true)
-    public List<Tariff> findAllTariffs() {
+    public List<TariffResponseDto> findAllTariffs() {
         List<Tariff> tariffs = tariffRepository.findAll();
 
         log.info("Получен список всех тарифов. Количество записей: {}", tariffs.size());
-        return tariffs;
+        return tariffMapper.toDtos(tariffs);
     }
 
-    public Tariff updateTariff(Long id, TariffUpdateDto tariffDto) {
+    public TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto) {
         Tariff existTariff = findTariffById(id);
 
         if (tariffDto.getName() != null && !tariffDto.getName().equals(existTariff.getName())
@@ -70,11 +73,20 @@ public class TariffService {
         tariffMapper.updateEntity(tariffDto, existTariff);
         log.info("Данные тарифа с ID {} успешно обновлены", existTariff.getId());
 
-        return existTariff;
+        return tariffMapper.toDto(existTariff);
+    }
+
+    @Transactional(readOnly = true)
+    public TariffResponseDto getTariffDtoById(Long id) {
+        return tariffMapper.toDto(findTariffById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public TariffResponseDto getTariffDtoByName(String name) {
+        return tariffMapper.toDto(findTariffByName(name));
     }
 
     public void deleteTariffById(Long id) {
-        findTariffById(id);
         tariffRepository.deleteById(id);
         log.info("Тариф с ID {} успешно удален", id);
     }

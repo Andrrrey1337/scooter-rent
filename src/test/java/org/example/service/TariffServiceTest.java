@@ -1,6 +1,8 @@
 package org.example.service;
 
 import org.example.dto.tariff.TariffUpdateDto;
+import org.example.dto.tariff.TariffResponseDto;
+import org.example.dto.tariff.TariffCreateDto;
 import org.example.entity.Tariff;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -31,6 +33,7 @@ class TariffServiceTest {
     private TariffService tariffService;
 
     private Tariff testTariff;
+    private TariffResponseDto tariffResponseDto;
 
     @BeforeEach
     void setUp() {
@@ -40,28 +43,37 @@ class TariffServiceTest {
                 .description("Описание тарифа")
                 .price(BigDecimal.valueOf(50.0))
                 .build();
+        tariffResponseDto = new TariffResponseDto();
+        tariffResponseDto.setName("Базовый");
     }
 
     @Test
     @DisplayName("Успешное создание тарифа")
     void createTariff_Success() {
+        TariffCreateDto createDto = new TariffCreateDto();
+        createDto.setName("Базовый");
         when(tariffRepository.findByName("Базовый")).thenReturn(Optional.empty());
+        when(tariffMapper.toEntity(createDto)).thenReturn(testTariff);
         when(tariffRepository.create(any(Tariff.class))).thenReturn(testTariff);
+        when(tariffMapper.toDto(testTariff)).thenReturn(tariffResponseDto);
 
-        Tariff result = tariffService.createTariff(testTariff);
+        TariffResponseDto result = tariffService.createTariff(createDto);
 
         assertNotNull(result);
         assertEquals("Базовый", result.getName());
-        verify(tariffRepository, times(1)).create(testTariff);
+        verify(tariffRepository, times(1)).create(any(Tariff.class));
     }
 
     @Test
     @DisplayName("Ошибка создания: тариф с таким именем уже существует")
     void createTariff_NameAlreadyExists_ThrowsBusinessException() {
+        TariffCreateDto createDto = new TariffCreateDto();
+        createDto.setName("Базовый");
+        when(tariffMapper.toEntity(createDto)).thenReturn(testTariff);
         when(tariffRepository.findByName(testTariff.getName())).thenReturn(Optional.of(testTariff));
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> tariffService.createTariff(testTariff));
+                () -> tariffService.createTariff(createDto));
 
         assertEquals("Тариф с названием 'Базовый' уже существует", exception.getMessage());
 
@@ -96,8 +108,9 @@ class TariffServiceTest {
     @DisplayName("Успешное получение списка всех тарифов")
     void findAllTariffs_Success() {
         when(tariffRepository.findAll()).thenReturn(List.of(testTariff));
+        when(tariffMapper.toDtos(any())).thenReturn(List.of(tariffResponseDto));
 
-        List<Tariff> result = tariffService.findAllTariffs();
+        List<TariffResponseDto> result = tariffService.findAllTariffs();
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -111,8 +124,9 @@ class TariffServiceTest {
         updateDto.setDescription("Новое описание");
 
         when(tariffRepository.findById(1L)).thenReturn(Optional.of(testTariff));
+        when(tariffMapper.toDto(testTariff)).thenReturn(tariffResponseDto);
 
-        Tariff result = tariffService.updateTariff(1L, updateDto);
+        TariffResponseDto result = tariffService.updateTariff(1L, updateDto);
 
         assertNotNull(result);
         verify(tariffMapper, times(1)).updateEntity(updateDto, testTariff);
@@ -154,7 +168,6 @@ class TariffServiceTest {
     @Test
     @DisplayName("Успешное удаление тарифа")
     void deleteTariffById_Success() {
-        when(tariffRepository.findById(1L)).thenReturn(Optional.of(testTariff));
 
         tariffService.deleteTariffById(1L);
 

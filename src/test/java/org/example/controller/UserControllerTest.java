@@ -50,8 +50,7 @@ class UserControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/users/username/{username} - Поиск по имени (Админ)")
     void getUserByUsername_ReturnsOk() throws Exception {
-        when(userService.findByUsername("testuser")).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.findByUsername("testuser")).thenReturn(userResponseDto);
 
         mockMvc.perform(get("/api/users/username/testuser"))
                 .andExpect(status().isOk())
@@ -61,8 +60,7 @@ class UserControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/users/me - Мой профиль")
     void getMyProfile_ReturnsOk() throws Exception {
-        when(userService.findById(1L)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.getDtoById(1L)).thenReturn(userResponseDto);
 
         mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isOk())
@@ -72,8 +70,7 @@ class UserControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/users/{id} - Поиск по ID")
     void getUserById_ReturnsOk() throws Exception {
-        when(userService.findById(1L)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.getDtoById(1L)).thenReturn(userResponseDto);
 
         mockMvc.perform(get("/api/users/1"))
                 .andExpect(status().isOk())
@@ -83,8 +80,7 @@ class UserControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("POST /api/users/{id}/balance - Пополнение баланса (Админ)")
     void addBalance_ReturnsOk() throws Exception {
-        when(userService.addBalance(eq(1L), any(BigDecimal.class))).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.addBalance(eq(1L), any(BigDecimal.class))).thenReturn(userResponseDto);
 
         mockMvc.perform(post("/api/users/1/balance")
                         .param("amount", "100.00"))
@@ -94,8 +90,7 @@ class UserControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("POST /api/users/me/balance - Пополнение моего баланса")
     void addMyBalance_ReturnsOk() throws Exception {
-        when(userService.addBalance(eq(1L), any(BigDecimal.class))).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.addBalance(eq(1L), any(BigDecimal.class))).thenReturn(userResponseDto);
 
         mockMvc.perform(post("/api/users/me/balance")
                         .param("amount", "100.00"))
@@ -108,8 +103,7 @@ class UserControllerTest extends BaseControllerTest {
         UserUpdateDto updateDto = new UserUpdateDto();
         updateDto.setUsername("newUsername");
 
-        when(userService.updateUser(eq(1L), any(UserUpdateDto.class))).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.updateUser(eq(1L), any(UserUpdateDto.class))).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/me")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,8 +115,7 @@ class UserControllerTest extends BaseControllerTest {
     @DisplayName("PATCH /api/users/{id} - Обновление профиля (Админ)")
     void updateUser_ReturnsOk() throws Exception {
         UserUpdateDto updateDto = new UserUpdateDto();
-        when(userService.updateUser(eq(1L), any(UserUpdateDto.class))).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.updateUser(eq(1L), any(UserUpdateDto.class))).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -134,8 +127,7 @@ class UserControllerTest extends BaseControllerTest {
     @DisplayName("PATCH /api/users/{id}/status - Обновление админских полей")
     void updateAdminFields_ReturnsOk() throws Exception {
         UserAdminUpdateDto adminDto = new UserAdminUpdateDto();
-        when(userService.updateAdminFields(eq(1L), any(UserAdminUpdateDto.class))).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userResponseDto);
+        when(userService.updateAdminFields(eq(1L), any(UserAdminUpdateDto.class))).thenReturn(userResponseDto);
 
         mockMvc.perform(patch("/api/users/1/status")
                         .contentType(MediaType.APPLICATION_JSON)

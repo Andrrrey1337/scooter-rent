@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.point.RentalPointCreateDto;
 import org.example.dto.point.RentalPointDataDto;
+import org.example.dto.point.RentalPointResponseDto;
 import org.example.dto.point.RentalPointUpdateDto;
+import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
 import org.example.entity.ScooterStatus;
@@ -31,7 +33,7 @@ public class RentalPointService {
     private final RentalPointMapper rentalPointMapper;
     private final ScooterMapper scooterMapper;
 
-    public RentalPoint createRentalPoint(RentalPointCreateDto dto) {
+    public RentalPointResponseDto createRentalPoint(RentalPointCreateDto dto) {
         validateNameUniqueness(dto.getName());
         
         RentalPoint rentalPoint = rentalPointMapper.toEntity(dto);
@@ -40,17 +42,17 @@ public class RentalPointService {
         rentalPoint = rentalPointRepository.create(rentalPoint);
         log.info("Успешно создана новая точка проката: ID={}, название='{}'", rentalPoint.getId(), rentalPoint.getName());
 
-        return rentalPoint;
+        return rentalPointMapper.toDto(rentalPoint);
     }
 
-    public List<RentalPoint> createRentalPointsBatch(List<RentalPointCreateDto> dtos) {
+    public List<RentalPointResponseDto> createRentalPointsBatch(List<RentalPointCreateDto> dtos) {
         log.info("Начато пакетное создание точек проката. Количество: {}", dtos.size());
-        List<RentalPoint> savedPoints = dtos.stream().map(this::createRentalPoint).toList();
+        List<RentalPointResponseDto> savedPoints = dtos.stream().map(this::createRentalPoint).toList();
         log.info("Успешно завершено пакетное создание {} точек проката", savedPoints.size());
         return savedPoints;
     }
 
-    public RentalPoint updateRentalPoint(Long id, RentalPointUpdateDto dto) {
+    public RentalPointResponseDto updateRentalPoint(Long id, RentalPointUpdateDto dto) {
         RentalPoint rentalPoint = findRentalPointById(id);
         
         if (dto.getName() != null && !dto.getName().equals(rentalPoint.getName())) {
@@ -61,24 +63,28 @@ public class RentalPointService {
         processHierarchy(rentalPoint, dto.getParentId());
 
         log.info("Данные точки проката с ID {} успешно обновлены", rentalPoint.getId());
-        return rentalPoint;
+        return rentalPointMapper.toDto(rentalPoint);
     }
 
     // реализация иерархии точек
     private void processHierarchy(RentalPoint rentalPoint, Long parentId) {
-        int level;
-        if (parentId != null) {
-            RentalPoint parent = findRentalPointById(parentId);
-            validateAndApplyHierarchy(rentalPoint, parent);
-            level = getAddressLevel(rentalPoint);
-        } else if (rentalPoint.getParent() != null) {
-            validateAndApplyHierarchy(rentalPoint, rentalPoint.getParent());
-            level = getAddressLevel(rentalPoint);
-        } else {
+        RentalPoint parent = resolveParentPoint(rentalPoint, parentId);
+        if (parent == null) {
             validateRootPoint(rentalPoint);
-            level = 1;
+            validateCoordinates(rentalPoint, 1);
+            return;
         }
+
+        validateAndApplyHierarchy(rentalPoint, parent);
+        int level = getAddressLevel(rentalPoint);
         validateCoordinates(rentalPoint, level);
+    }
+
+    private RentalPoint resolveParentPoint(RentalPoint rentalPoint, Long parentId) {
+        if (parentId != null) {
+            return findRentalPointById(parentId);
+        }
+        return rentalPoint.getParent();
     }
 
     private void validateCoordinates(RentalPoint point, int level) {
@@ -180,20 +186,19 @@ public class RentalPointService {
     }
 
     @Transactional(readOnly = true)
-    public List<RentalPoint> findAllRentalPoints() {
-        return rentalPointRepository.findAll();
+    public List<RentalPointResponseDto> findAllRentalPoints() {
+        return rentalPointMapper.toDtos(rentalPointRepository.findAll());
     }
 
     public void deleteById(Long id) {
-        findRentalPointById(id);
         rentalPointRepository.deleteById(id);
         log.info("Точка проката с ID {} успешно удалена", id);
     }
 
     @Transactional(readOnly = true)
-    public List<Scooter> findAllScootersAtRentalPoint(Long rentalPointId) {
+    public List<ScooterAdminResponseDto> findAllScootersAtRentalPoint(Long rentalPointId) {
         findRentalPointById(rentalPointId);
-        return scooterRepository.findAllByRentalPoint(rentalPointId);
+        return scooterMapper.toAdminDtos(scooterRepository.findAllByRentalPoint(rentalPointId));
     }
 
     @Transactional(readOnly = true)
@@ -204,29 +209,66 @@ public class RentalPointService {
         return buildRentalPointDataDto(point, allScooters);
     }
 
+    @Transactional(readOnly = true)
+    public RentalPointResponseDto getRentalPointDtoById(Long id) {
+        return rentalPointMapper.toDto(findRentalPointById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public RentalPointResponseDto getRentalPointDtoByName(String name) {
+        return rentalPointMapper.toDto(findRentalPointByName(name));
+    }
+
     private RentalPointDataDto buildRentalPointDataDto(RentalPoint point, List<Scooter> scooters) {
-        List<Scooter> available = scooters.stream()
-                .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
-                .toList();
+        List<Scooter> available = getAvailableScooters(scooters);
+        long rentedCount = countRentedScooters(scooters);
+        Map<String, Long> modelsSummary = buildAvailableModelsSummary(available);
+        List<ScooterAdminResponseDto> availableScooters = scooterMapper.toAdminDtos(available);
 
-        long rentedCount = scooters.stream()
-                .filter(s -> s.getScooterStatus() == ScooterStatus.RENTED)
-                .count();
+        return createRentalPointDataDto(
+                point,
+                scooters.size(),
+                available.size(),
+                rentedCount,
+                modelsSummary,
+                availableScooters
+        );
+    }
 
-        Map<String, Long> modelsSummary = available.stream()
-                .collect(Collectors.groupingBy(s -> s.getScooterModel().getName(), Collectors.counting()));
-
+    private RentalPointDataDto createRentalPointDataDto(RentalPoint point,
+                                                        int totalScooters,
+                                                        int availableScootersCount,
+                                                        long rentedScootersCount,
+                                                        Map<String, Long> availableModelsSummary,
+                                                        List<ScooterAdminResponseDto> availableScooters) {
         return RentalPointDataDto.builder()
                 .rentalPointId(point.getId())
                 .rentalPointName(point.getName())
                 .city(point.getCity())
                 .street(point.getStreet())
                 .houseNumber(point.getHouseNumber())
-                .totalScooters(scooters.size())
-                .availableScooters(available.size())
-                .rentedScooters(rentedCount)
-                .availableModelsSummary(modelsSummary)
-                .availableScootersList(scooterMapper.toAdminDtos(available))
+                .totalScooters(totalScooters)
+                .availableScooters(availableScootersCount)
+                .rentedScooters(rentedScootersCount)
+                .availableModelsSummary(availableModelsSummary)
+                .availableScootersList(availableScooters)
                 .build();
+    }
+
+    private List<Scooter> getAvailableScooters(List<Scooter> scooters) {
+        return scooters.stream()
+                .filter(s -> s.getScooterStatus() == ScooterStatus.AVAILABLE)
+                .toList();
+    }
+
+    private long countRentedScooters(List<Scooter> scooters) {
+        return scooters.stream()
+                .filter(s -> s.getScooterStatus() == ScooterStatus.RENTED)
+                .count();
+    }
+
+    private Map<String, Long> buildAvailableModelsSummary(List<Scooter> availableScooters) {
+        return availableScooters.stream()
+                .collect(Collectors.groupingBy(s -> s.getScooterModel().getName(), Collectors.counting()));
     }
 }

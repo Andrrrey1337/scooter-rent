@@ -2,6 +2,8 @@ package org.example.service;
 
 import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterUpdateDto;
+import org.example.dto.scooter.ScooterAdminResponseDto;
+import org.example.dto.scooter.ScooterResponseDto;
 import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
 import org.example.exception.BusinessException;
@@ -37,6 +39,8 @@ class ScooterServiceTest {
 
     private Scooter scooter;
     private ScooterCreateDto scooterCreateDto;
+    private ScooterAdminResponseDto scooterAdminResponseDto;
+    private ScooterResponseDto scooterResponseDto;
     private Long scooterId = 1L;
     private String serialNumber = "SN123";
 
@@ -49,6 +53,11 @@ class ScooterServiceTest {
         scooterCreateDto = new ScooterCreateDto();
         scooterCreateDto.setSerialNumber(serialNumber);
         scooterCreateDto.setRentalPointId(1L);
+
+        scooterAdminResponseDto = new ScooterAdminResponseDto();
+        scooterAdminResponseDto.setSerialNumber(serialNumber);
+        scooterResponseDto = new ScooterResponseDto();
+        scooterResponseDto.setSerialNumber(serialNumber);
     }
 
     @Test
@@ -59,8 +68,9 @@ class ScooterServiceTest {
         when(rentalPointRepository.findById(1L)).thenReturn(Optional.of(new RentalPoint()));
         when(rentalPointService.getAddressLevel(any())).thenReturn(3); // Обязательно уровень 3
         when(scooterRepository.create(any())).thenReturn(scooter);
+        when(scooterMapper.toAdminDto(scooter)).thenReturn(scooterAdminResponseDto);
 
-        Scooter result = scooterService.createScooter(scooterCreateDto);
+        ScooterAdminResponseDto result = scooterService.createScooter(scooterCreateDto);
 
         assertNotNull(result);
         assertEquals(serialNumber, result.getSerialNumber());
@@ -101,10 +111,11 @@ class ScooterServiceTest {
     }
 
     @Test
-    @DisplayName("findScooterBySerialNumber - Успех")
-    void findScooterBySerialNumber_Success() {
+    @DisplayName("getScooterDtoBySerialNumber - Успех")
+    void getScooterDtoBySerialNumber_Success() {
         when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.of(scooter));
-        Scooter result = scooterService.findScooterBySerialNumber(serialNumber);
+        when(scooterMapper.toDto(scooter)).thenReturn(scooterResponseDto);
+        ScooterResponseDto result = scooterService.getScooterDtoBySerialNumber(serialNumber);
         assertEquals(serialNumber, result.getSerialNumber());
     }
 
@@ -112,17 +123,17 @@ class ScooterServiceTest {
     @DisplayName("findAvailableScooters - Успех")
     void findAvailableScooters_Success() {
         when(scooterRepository.findAvailableByRentalPoint(1L, 50)).thenReturn(Collections.singletonList(scooter));
-        List<Scooter> result = scooterService.findAvailableScooters(1L, 50);
+        when(scooterMapper.toDtos(any())).thenReturn(Collections.singletonList(scooterResponseDto));
+        List<ScooterResponseDto> result = scooterService.findAvailableScooters(1L, 50);
         assertEquals(1, result.size());
     }
 
     @Test
     @DisplayName("deleteScooterById - Успех")
     void deleteScooterById_Success() {
-        when(scooterRepository.findById(scooterId)).thenReturn(Optional.of(scooter));
 
         scooterService.deleteScooterById(scooterId);
 
-        verify(scooterRepository, times(1)).deleteById(scooterId);
+        verify(scooterRepository).deleteById(scooterId);
     }
 }

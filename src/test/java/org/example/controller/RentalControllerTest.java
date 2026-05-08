@@ -30,8 +30,6 @@ class RentalControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private RentalService rentalService;
-    @MockitoBean
-    private RentalMapper rentalMapper;
 
     private Rental rental;
     private RentalResponseDto responseDto;
@@ -53,8 +51,7 @@ class RentalControllerTest extends BaseControllerTest {
         startDto.setTariffId(1L);
         startDto.setUserId(1L);
 
-        when(rentalService.startRental(any())).thenReturn(rental);
-        when(rentalMapper.toDto(any())).thenReturn(responseDto);
+        when(rentalService.startRental(any())).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/rentals/start")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -70,9 +67,10 @@ class RentalControllerTest extends BaseControllerTest {
         finishDto.setEndLatitude(new BigDecimal("53.9100"));
         finishDto.setEndLongitude(new BigDecimal("27.5700"));
         finishDto.setDistance(new BigDecimal("5.5"));
+        finishDto.setBatteryLevel(80);
 
-        when(rentalService.finishRental(eq(1L), any())).thenReturn(rental);
-        when(rentalMapper.toDto(any())).thenReturn(responseDto);
+
+        when(rentalService.finishRental(eq(1L), any())).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/rentals/1/finish")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,9 +81,7 @@ class RentalControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/rentals/my - Моя история")
     void getMyRentals_ReturnsOk() throws Exception {
-        when(rentalService.findRentalsByUserId(1L)).thenReturn(Collections.singletonList(rental));
-        when(rentalMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
-
+        when(rentalService.findRentalsByUserId(1L)).thenReturn(Collections.singletonList(responseDto));
 
         mockMvc.perform(get("/api/rentals/my"))
                 .andExpect(status().isOk())
@@ -95,8 +91,7 @@ class RentalControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/rentals/user/{userId} - История пользователя (Админ)")
     void getUserRentals_ReturnsOk() throws Exception {
-        when(rentalService.findRentalsByUserId(1L)).thenReturn(Collections.singletonList(rental));
-        when(rentalMapper.toDtos(any())).thenReturn(Collections.singletonList(responseDto));
+        when(rentalService.findRentalsByUserId(1L)).thenReturn(Collections.singletonList(responseDto));
 
         mockMvc.perform(get("/api/rentals/user/1"))
                 .andExpect(status().isOk());
@@ -106,8 +101,7 @@ class RentalControllerTest extends BaseControllerTest {
     @DisplayName("GET /api/rentals/scooter/{scooterId} - История самоката (Админ)")
     void getScooterRentals_ReturnsOk() throws Exception {
         RentalAdminResponseDto adminResponseDto = new RentalAdminResponseDto();
-        when(rentalService.findRentalsByScooterId(1L)).thenReturn(Collections.singletonList(rental));
-        when(rentalMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(adminResponseDto));
+        when(rentalService.findRentalsByScooterId(1L)).thenReturn(Collections.singletonList(adminResponseDto));
 
         mockMvc.perform(get("/api/rentals/scooter/1"))
                 .andExpect(status().isOk());

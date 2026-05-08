@@ -5,10 +5,6 @@ import org.example.dto.subscription.SubscriptionCreateDto;
 import org.example.dto.subscription.SubscriptionResponseDto;
 import org.example.dto.subscription.SubscriptionUpdateDto;
 import org.example.dto.subscription.UserSubscriptionResponseDto;
-import org.example.entity.Subscription;
-import org.example.entity.UserSubscription;
-import org.example.mapper.SubscriptionMapper;
-import org.example.mapper.UserSubscriptionMapper;
 import org.example.service.SubscriptionService;
 import org.example.service.UserSubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,24 +31,13 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @MockitoBean
     private SubscriptionService subscriptionService;
     @MockitoBean
-    private SubscriptionMapper subscriptionMapper;
-    @MockitoBean
-    private UserSubscriptionMapper userSubscriptionMapper;
-    @MockitoBean
     private UserSubscriptionService userSubscriptionService;
 
-    private Subscription testSubscription;
     private SubscriptionResponseDto subscriptionResponseDto;
     private UserSubscriptionResponseDto userSubscriptionResponseDto;
 
     @BeforeEach
     void setUp() {
-        testSubscription = Subscription.builder()
-                .id(1L)
-                .name("Monthly")
-                .price(BigDecimal.valueOf(499.0))
-                .build();
-
         subscriptionResponseDto = SubscriptionResponseDto.builder()
                 .id(1L)
                 .name("Monthly")
@@ -78,9 +63,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
         createDto.setMinutesIncluded(100);
         createDto.setIsFreeStart(true);
 
-        when(subscriptionMapper.toEntity(any())).thenReturn(testSubscription);
-        when(subscriptionService.createSubscription(any())).thenReturn(testSubscription);
-        when(subscriptionMapper.toDto(any())).thenReturn(subscriptionResponseDto);
+        when(subscriptionService.createSubscription(any())).thenReturn(subscriptionResponseDto);
 
         mockMvc.perform(post("/api/subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,9 +75,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("POST /api/subscriptions/{id}/buy - Купить абонемент")
     void buySubscription_ReturnsOk() throws Exception {
-        UserSubscription userSub = new UserSubscription();
-        when(userSubscriptionService.buySubscription(eq(1L), eq(1L))).thenReturn(userSub);
-        when(userSubscriptionMapper.toDto(any())).thenReturn(userSubscriptionResponseDto);
+        when(userSubscriptionService.buySubscription(eq(1L), eq(1L))).thenReturn(userSubscriptionResponseDto);
 
         mockMvc.perform(post("/api/subscriptions/1/buy"))
                 .andExpect(status().isOk())
@@ -104,8 +85,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/subscriptions - Получить все")
     void getAll_ReturnsOk() throws Exception {
-        when(subscriptionService.findAllSubscriptions()).thenReturn(Collections.singletonList(testSubscription));
-        when(subscriptionMapper.toDtos(any())).thenReturn(Collections.singletonList(subscriptionResponseDto));
+        when(subscriptionService.findAllSubscriptions()).thenReturn(Collections.singletonList(subscriptionResponseDto));
 
         mockMvc.perform(get("/api/subscriptions"))
                 .andExpect(status().isOk())
@@ -115,8 +95,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/subscriptions/{id} - Получение по ID (Админ)")
     void getSubscriptionById_Success() throws Exception {
-        when(subscriptionService.findSubscriptionById(1L)).thenReturn(testSubscription);
-        when(subscriptionMapper.toDto(testSubscription)).thenReturn(subscriptionResponseDto);
+        when(subscriptionService.getSubscriptionDtoById(1L)).thenReturn(subscriptionResponseDto);
 
         mockMvc.perform(get("/api/subscriptions/{id}", 1L))
                 .andExpect(status().isOk())
@@ -127,9 +106,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/subscriptions/my/active - Мой активный абонемент")
     void getMyActiveSubscription_ReturnsOk() throws Exception {
-        UserSubscription userSub = new UserSubscription();
-        when(userSubscriptionService.findActiveSubscription(1L)).thenReturn(userSub);
-        when(userSubscriptionMapper.toDto(any())).thenReturn(userSubscriptionResponseDto);
+        when(userSubscriptionService.findActiveSubscriptionDto(1L)).thenReturn(userSubscriptionResponseDto);
 
         mockMvc.perform(get("/api/subscriptions/my/active"))
                 .andExpect(status().isOk())
@@ -139,9 +116,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("GET /api/subscriptions/my/history - История моих покупок")
     void getMySubscriptionHistory_Success() throws Exception {
-        UserSubscription userSubscription = new UserSubscription();
-        when(userSubscriptionService.findPurchaseHistory(1L)).thenReturn(List.of(userSubscription));
-        when(userSubscriptionMapper.toDto(userSubscription)).thenReturn(userSubscriptionResponseDto);
+        when(userSubscriptionService.findPurchaseHistoryDto(1L)).thenReturn(List.of(userSubscriptionResponseDto));
 
         mockMvc.perform(get("/api/subscriptions/my/history"))
                 .andExpect(status().isOk())
@@ -155,8 +130,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
         SubscriptionUpdateDto updateDto = new SubscriptionUpdateDto();
         updateDto.setName("Premium");
 
-        when(subscriptionService.updateSubscription(eq(1L), any(SubscriptionUpdateDto.class))).thenReturn(testSubscription);
-        when(subscriptionMapper.toDto(testSubscription)).thenReturn(subscriptionResponseDto);
+        when(subscriptionService.updateSubscription(eq(1L), any(SubscriptionUpdateDto.class))).thenReturn(subscriptionResponseDto);
 
         mockMvc.perform(patch("/api/subscriptions/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)

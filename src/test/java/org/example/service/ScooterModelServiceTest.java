@@ -1,6 +1,8 @@
 package org.example.service;
 
 import org.example.dto.scooterModel.ScooterModelUpdateDto;
+import org.example.dto.scooterModel.ScooterModelCreateDto;
+import org.example.dto.scooterModel.ScooterModelResponseDto;
 import org.example.entity.ScooterModel;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
@@ -33,6 +35,7 @@ class ScooterModelServiceTest {
     private ScooterModelService scooterModelService;
 
     private ScooterModel scooterModel;
+    private ScooterModelResponseDto scooterModelResponseDto;
     private Long id = 1L;
     private String name = "Model X";
 
@@ -41,15 +44,23 @@ class ScooterModelServiceTest {
         scooterModel = new ScooterModel();
         scooterModel.setId(id);
         scooterModel.setName(name);
+        scooterModelResponseDto = new ScooterModelResponseDto();
+        scooterModelResponseDto.setId(id);
+        scooterModelResponseDto.setName(name);
     }
 
     @Test
     @DisplayName("createScooterModel - Успех")
     void createScooterModel_Success() {
-        when(scooterModelRepository.findByName(name)).thenReturn(Optional.empty());
+        ScooterModelCreateDto createDto = new ScooterModelCreateDto();
+        createDto.setName("Yamaha");
+        ScooterModel modelFromDto = new ScooterModel();
+        modelFromDto.setName("Yamaha");
+        when(scooterModelMapper.toEntity(createDto)).thenReturn(modelFromDto);
+        when(scooterModelRepository.findByName("Yamaha")).thenReturn(Optional.empty());
         when(scooterModelRepository.create(any(ScooterModel.class))).thenReturn(scooterModel);
-
-        ScooterModel result = scooterModelService.createScooterModel(scooterModel);
+        when(scooterModelMapper.toDto(scooterModel)).thenReturn(scooterModelResponseDto);
+        ScooterModelResponseDto result = scooterModelService.createScooterModel(createDto);
 
         assertNotNull(result);
         assertEquals(name, result.getName());
@@ -58,8 +69,13 @@ class ScooterModelServiceTest {
     @Test
     @DisplayName("createScooterModel - Уже существует")
     void createScooterModel_AlreadyExists_ThrowsBusinessException() {
-        when(scooterModelRepository.findByName(name)).thenReturn(Optional.of(scooterModel));
-        assertThrows(BusinessException.class, () -> scooterModelService.createScooterModel(scooterModel));
+        ScooterModelCreateDto createDto = new ScooterModelCreateDto();
+        createDto.setName("Yamaha");
+        ScooterModel modelFromDto = new ScooterModel();
+        modelFromDto.setName("Yamaha");
+        when(scooterModelMapper.toEntity(createDto)).thenReturn(modelFromDto);
+        when(scooterModelRepository.findByName("Yamaha")).thenReturn(Optional.of(scooterModel));
+        assertThrows(BusinessException.class, () -> scooterModelService.createScooterModel(createDto));
     }
 
     @Test
@@ -81,7 +97,8 @@ class ScooterModelServiceTest {
     @DisplayName("findAllScooterModel - Успех")
     void findAllScooterModel_Success() {
         when(scooterModelRepository.findAll()).thenReturn(Collections.singletonList(scooterModel));
-        List<ScooterModel> result = scooterModelService.findAllScooterModel();
+        when(scooterModelMapper.toDtos(any())).thenReturn(Collections.singletonList(scooterModelResponseDto));
+        List<ScooterModelResponseDto> result = scooterModelService.findAllScooterModels();
         assertEquals(1, result.size());
     }
 
@@ -90,6 +107,7 @@ class ScooterModelServiceTest {
     void updateScooterModel_Success() {
         ScooterModelUpdateDto updateDto = new ScooterModelUpdateDto();
         when(scooterModelRepository.findById(id)).thenReturn(Optional.of(scooterModel));
+        when(scooterModelMapper.toDto(scooterModel)).thenReturn(scooterModelResponseDto);
 
         scooterModelService.updateScooterModel(id, updateDto);
 
@@ -99,7 +117,6 @@ class ScooterModelServiceTest {
     @Test
     @DisplayName("deleteScooterModelById - Успех")
     void deleteScooterModelById_Success() {
-        when(scooterModelRepository.findById(id)).thenReturn(Optional.of(scooterModel));
         scooterModelService.deleteScooterModelById(id);
         verify(scooterModelRepository).deleteById(id);
     }

@@ -1,14 +1,13 @@
 package org.example.service;
 
+import org.example.dto.subscription.UserSubscriptionResponseDto;
 import org.example.entity.Subscription;
 import org.example.entity.User;
 import org.example.entity.UserSubscription;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
+import org.example.mapper.UserSubscriptionMapper;
 import org.example.repository.UserSubscriptionRepository;
-import org.example.service.SubscriptionService;
-import org.example.service.UserService;
-import org.example.service.UserSubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +31,7 @@ class UserSubscriptionServiceTest {
     @Mock private UserSubscriptionRepository userSubscriptionRepository;
     @Mock private UserService userService;
     @Mock private SubscriptionService subscriptionService;
+    @Mock private UserSubscriptionMapper userSubscriptionMapper;
 
     @InjectMocks
     private UserSubscriptionService userSubscriptionService;
@@ -39,6 +39,8 @@ class UserSubscriptionServiceTest {
     private User user;
     private Subscription subscription;
     private UserSubscription userSubscription;
+    private UserSubscriptionResponseDto responseDto;
+
 
     @BeforeEach
     void setUp() {
@@ -60,17 +62,20 @@ class UserSubscriptionServiceTest {
                 .subscription(subscription)
                 .isActive(true)
                 .build();
+        responseDto = new UserSubscriptionResponseDto();
+        responseDto.setIsActive(true);
     }
 
     @Test
     @DisplayName("buySubscription - Успех")
     void buySubscription_Success() {
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findEntityById(1L)).thenReturn(user);
         when(subscriptionService.findSubscriptionById(1L)).thenReturn(subscription);
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
         when(userSubscriptionRepository.create(any(UserSubscription.class))).thenReturn(userSubscription);
+        when(userSubscriptionMapper.toDto(userSubscription)).thenReturn(responseDto);
 
-        UserSubscription result = userSubscriptionService.buySubscription(1L, 1L);
+        UserSubscriptionResponseDto result = userSubscriptionService.buySubscription(1L, 1L);
 
         assertNotNull(result);
         assertEquals(new BigDecimal("500.00"), user.getBalance());
@@ -80,7 +85,7 @@ class UserSubscriptionServiceTest {
     @Test
     @DisplayName("buySubscription - Уже есть активная подписка")
     void buySubscription_AlreadyHasActive_ThrowsBusinessException() {
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findEntityById(1L)).thenReturn(user);
         when(subscriptionService.findSubscriptionById(1L)).thenReturn(subscription);
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.of(userSubscription));
 
@@ -91,7 +96,7 @@ class UserSubscriptionServiceTest {
     @DisplayName("buySubscription - Недостаточно средств")
     void buySubscription_InsufficientFunds_ThrowsBusinessException() {
         user.setBalance(new BigDecimal("100.00"));
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findEntityById(1L)).thenReturn(user);
         when(subscriptionService.findSubscriptionById(1L)).thenReturn(subscription);
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.empty());
 
@@ -102,9 +107,7 @@ class UserSubscriptionServiceTest {
     @DisplayName("findActiveSubscription - Успех")
     void findActiveSubscription_Success() {
         when(userSubscriptionRepository.findActiveByUserId(1L)).thenReturn(Optional.of(userSubscription));
-
         UserSubscription result = userSubscriptionService.findActiveSubscription(1L);
-
         assertNotNull(result);
         assertTrue(result.getIsActive());
     }
@@ -121,7 +124,6 @@ class UserSubscriptionServiceTest {
     @DisplayName("findPurchaseHistory - Успех")
     void findPurchaseHistory_Success() {
         when(userSubscriptionRepository.findAllByUserId(1L)).thenReturn(Collections.singletonList(userSubscription));
-
         List<UserSubscription> result = userSubscriptionService.findPurchaseHistory(1L);
 
         assertEquals(1, result.size());

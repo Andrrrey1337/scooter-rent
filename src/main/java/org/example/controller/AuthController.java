@@ -8,8 +8,6 @@ import org.example.dto.auth.JwtRequest;
 import org.example.dto.auth.JwtResponse;
 import org.example.dto.user.UserCreateDto;
 import org.example.dto.user.UserResponseDto;
-import org.example.entity.User;
-import org.example.mapper.UserMapper;
 import org.example.service.AuthService;
 import org.example.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -26,18 +24,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService authService;
     private final UserService userService;
-    private final UserMapper userMapper;
 
     @PostMapping("/register")
     @Operation(summary = "Регистрация пользователя", description = "Создает нового пользователя. По умолчанию назначается роль USER.")
     public ResponseEntity<UserResponseDto> registerUser(@Valid @RequestBody UserCreateDto userCreateDto) {
-        User user = userService.registerUser(userMapper.toEntity(userCreateDto));
-        return new ResponseEntity<>(userMapper.toDto(user), HttpStatus.CREATED);
+        UserResponseDto user = userService.registerUser(userCreateDto);
+        return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Войти в систему", description = "Возвращает JWT токен при успешном вводе логина и пароля")
     public ResponseEntity<JwtResponse> login(@Valid @RequestBody JwtRequest jwtRequest) {
-        return ResponseEntity.ok(authService.login(jwtRequest));
+        JwtResponse response = authService.login(jwtRequest);
+        return ResponseEntity.ok(response);
     }
 }
