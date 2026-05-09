@@ -19,7 +19,9 @@ public class ScooterControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithMockUser(username = "testuser", roles = {"USER"}) // обходим Security
     @DisplayName("Интеграционный тест: Поиск свободных самокатов на точке")
-    @Sql(scripts = "/sql/insert_scooters.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/scooters_available.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void getAvailableScooters_ReturnsOnlyAvailable() throws Exception {
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_available_scooters.json"));

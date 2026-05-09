@@ -1,20 +1,13 @@
 package org.example.service;
 
 import org.example.dto.point.RentalPointCreateDto;
-import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.dto.point.RentalPointResponseDto;
-import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.entity.RentalPoint;
-import org.example.entity.Scooter;
-import org.example.entity.ScooterModel;
-import org.example.entity.ScooterStatus;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalPointMapper;
-import org.example.mapper.ScooterMapper;
 import org.example.repository.RentalPointRepository;
-import org.example.repository.ScooterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,16 +28,13 @@ import static org.mockito.Mockito.*;
 class RentalPointServiceTest {
 
     @Mock private RentalPointRepository rentalPointRepository;
-    @Mock private ScooterRepository scooterRepository;
     @Mock private RentalPointMapper rentalPointMapper;
-    @Mock private ScooterMapper scooterMapper;
 
     @InjectMocks
     private RentalPointService rentalPointService;
 
     private RentalPoint rentalPoint;
     private RentalPointResponseDto rentalPointResponseDto;
-    private ScooterAdminResponseDto scooterAdminResponseDto;
     private Long id = 1L;
     private String name = "Point A";
 
@@ -57,7 +47,6 @@ class RentalPointServiceTest {
         rentalPointResponseDto = new RentalPointResponseDto();
         rentalPointResponseDto.setId(id);
         rentalPointResponseDto.setName(name);
-        scooterAdminResponseDto = new ScooterAdminResponseDto();
     }
 
     @Test
@@ -213,49 +202,4 @@ class RentalPointServiceTest {
 
         verify(rentalPointRepository).deleteById(id);
     }
-
-    @Test
-    @DisplayName("findAllScootersAtRentalPoint - Успех")
-    void findAllScootersAtRentalPoint_Success() {
-        Scooter scooter = new Scooter();
-        when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
-        when(scooterRepository.findAllByRentalPoint(id)).thenReturn(Collections.singletonList(scooter));
-        when(scooterMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(scooterAdminResponseDto));
-
-        List<ScooterAdminResponseDto> result = rentalPointService.findAllScootersAtRentalPoint(id);
-
-        assertEquals(1, result.size());
-        verify(scooterRepository, times(1)).findAllByRentalPoint(id);
     }
-
-    @Test
-    @DisplayName("getRentalPointDataById - Успех")
-    void getRentalPointDataById_Success() {
-        ScooterModel model = new ScooterModel();
-        model.setName("Model X");
-
-        Scooter scooter = new Scooter();
-        scooter.setScooterStatus(ScooterStatus.AVAILABLE);
-        scooter.setScooterModel(model);
-
-        when(rentalPointRepository.findById(id)).thenReturn(Optional.of(rentalPoint));
-        when(scooterRepository.findAllByRentalPoint(id)).thenReturn(Collections.singletonList(scooter));
-        when(scooterMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(scooterAdminResponseDto));
-
-        RentalPointDataDto result = rentalPointService.getRentalPointDataById(id);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotalScooters());
-        assertEquals(1, result.getAvailableScooters());
-    }
-
-    @Test
-    @DisplayName("getRentalPointDataById - Точка не найдена (Негативный)")
-    void getRentalPointDataById_NotFound_ThrowsException() {
-        when(rentalPointRepository.findById(id)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> rentalPointService.getRentalPointDataById(id));
-
-        verify(scooterRepository, never()).findAllByRentalPoint(any());
-    }
-}

@@ -9,7 +9,9 @@ import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointResponseDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.dto.scooter.ScooterAdminResponseDto;
+import org.example.service.RentalPointFacade;
 import org.example.service.RentalPointService;
+import org.example.service.ScooterService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +25,8 @@ import java.util.List;
 @Tag(name = "Точки проката", description = "Управление точками проката самокатов")
 public class RentalPointController {
     private final RentalPointService rentalPointService;
+    private final ScooterService scooterService;
+    private final RentalPointFacade rentalPointFacade;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -81,7 +85,7 @@ public class RentalPointController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить список всех самокатов на точке проката (админ)")
     public ResponseEntity<List<ScooterAdminResponseDto>> getScootersAtPointById(@PathVariable Long id) {
-        List<ScooterAdminResponseDto> scooters = rentalPointService.findAllScootersAtRentalPoint(id);
+        List<ScooterAdminResponseDto> scooters = scooterService.getScooterAdminDtosAtRentalPoint(id);
         return ResponseEntity.ok(scooters);
     }
 
@@ -89,7 +93,7 @@ public class RentalPointController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получить детальную статистику по точке проката", description = "Количество свободных/занятых самокатов, список моделей")
     public ResponseEntity<RentalPointDataDto> getRentalPointDataById(@PathVariable Long id) { // только для админов
-        RentalPointDataDto data = rentalPointService.getRentalPointDataById(id);
+        RentalPointDataDto data = rentalPointFacade.getRentalPointDataById(id);
         return ResponseEntity.ok(data);
     }
 }

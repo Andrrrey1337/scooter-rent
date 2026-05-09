@@ -24,7 +24,9 @@ public class RentalControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithUserDetails(value = "testuser", setupBefore = TestExecutionEvent.TEST_EXECUTION) // пользователя уже создали
     @DisplayName("Интеграционный тест: Старт аренды")
-    @Sql(scripts = "/sql/insert_rentals.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/rental_start.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void startRental_ReturnsCreated() throws Exception {
 
         // данные для POST-запроса
@@ -45,7 +47,9 @@ public class RentalControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithUserDetails(value = "finisher", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Интеграционный тест: Завершение аренды")
-    @Sql(scripts = "/sql/insert_rentals.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/rental_finish.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void finishRental_ReturnsOk() throws Exception {
 
         // данные поездки для завершения

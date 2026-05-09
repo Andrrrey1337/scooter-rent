@@ -11,7 +11,6 @@ import org.example.entity.Scooter;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterMapper;
-import org.example.repository.RentalPointRepository;
 import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +24,6 @@ import java.util.List;
 public class ScooterService {
     private final ScooterRepository scooterRepository;
     private final ScooterMapper scooterMapper;
-    private final RentalPointRepository rentalPointRepository;
     private final RentalPointService rentalPointService;
 
     public ScooterAdminResponseDto createScooter(ScooterCreateDto scooterDto) {
@@ -74,8 +72,7 @@ public class ScooterService {
 
     // есть ли у точки дочерние элементы
     private RentalPoint validateRentalPointForScooter(Long rentalPointId) {
-        RentalPoint point = rentalPointRepository.findById(rentalPointId)
-                .orElseThrow(() -> new ResourceNotFoundException("Точка проката с ID " + rentalPointId + " не найдена"));
+        RentalPoint point = rentalPointService.findRentalPointById(rentalPointId);
 
         if (3 != rentalPointService.getAddressLevel(point)) {
             throw new BusinessException("Самокат можно привязать только к конечной точке проката");
@@ -87,6 +84,16 @@ public class ScooterService {
         if (scooterRepository.findBySerialNumber(serialNumber).isPresent()) {
             throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<Scooter> findAllByRentalPoint(Long rentalPointId) {
+        return scooterRepository.findAllByRentalPoint(rentalPointId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScooterAdminResponseDto> getScooterAdminDtosAtRentalPoint(Long rentalPointId) {
+        return scooterMapper.toAdminDtos(findAllByRentalPoint(rentalPointId));
     }
 
     @Transactional(readOnly = true)
@@ -110,6 +117,11 @@ public class ScooterService {
     @Transactional(readOnly = true)
     public List<ScooterResponseDto> findAvailableScooters(Long rentalPointId, Integer minBatteryLevel) {
         return scooterMapper.toDtos(scooterRepository.findAvailableByRentalPoint(rentalPointId, minBatteryLevel));
+    }
+
+    public void update(Scooter scooter) {
+        scooterRepository.update(scooter);
+        log.info("Сущность самоката с ID {} успешно обновлена напрямую", scooter.getId());
     }
 
     public void deleteScooterById(Long scooterId) {

@@ -31,7 +31,6 @@ class ScooterServiceTest {
 
     @Mock private ScooterRepository scooterRepository;
     @Mock private ScooterMapper scooterMapper;
-    @Mock private RentalPointRepository rentalPointRepository;
     @Mock private RentalPointService rentalPointService;
 
     @InjectMocks
@@ -63,10 +62,15 @@ class ScooterServiceTest {
     @Test
     @DisplayName("createScooter - Успех")
     void createScooter_Success() {
+        RentalPoint point = new RentalPoint();
+        point.setCity("Minsk");
+        point.setStreet("Lenina");
+        point.setHouseNumber("1"); // Уровень 3
+
         when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.empty());
         when(scooterMapper.toEntity(scooterCreateDto)).thenReturn(scooter);
-        when(rentalPointRepository.findById(1L)).thenReturn(Optional.of(new RentalPoint()));
-        when(rentalPointService.getAddressLevel(any())).thenReturn(3); // Обязательно уровень 3
+        when(rentalPointService.findRentalPointById(1L)).thenReturn(point);
+        when(rentalPointService.getAddressLevel(point)).thenReturn(3); // Обязательно уровень 3
         when(scooterRepository.create(any())).thenReturn(scooter);
         when(scooterMapper.toAdminDto(scooter)).thenReturn(scooterAdminResponseDto);
 
@@ -87,10 +91,14 @@ class ScooterServiceTest {
     @Test
     @DisplayName("createScooter - Ошибка: Точка не 3 уровня")
     void createScooter_WrongLevel_ThrowsBusinessException() {
+        RentalPoint point = new RentalPoint();
+        point.setCity("Minsk");
+        point.setStreet("Lenina"); // Уровень 2
+
         when(scooterRepository.findBySerialNumber(serialNumber)).thenReturn(Optional.empty());
         when(scooterMapper.toEntity(scooterCreateDto)).thenReturn(scooter);
-        when(rentalPointRepository.findById(1L)).thenReturn(Optional.of(new RentalPoint()));
-        when(rentalPointService.getAddressLevel(any())).thenReturn(2); // Улица, а не Дом
+        when(rentalPointService.findRentalPointById(1L)).thenReturn(point);
+        when(rentalPointService.getAddressLevel(point)).thenReturn(2); // Улица, а не Дом
 
         assertThrows(BusinessException.class, () -> scooterService.createScooter(scooterCreateDto));
     }

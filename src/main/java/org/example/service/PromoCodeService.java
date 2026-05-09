@@ -40,6 +40,12 @@ public class PromoCodeService {
         return promoCode;
     }
 
+    @Transactional(readOnly = true)
+    public PromoCode findByCode(String code) {
+        return promoCodeRepository.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Промокод '" + code + "' не найден"));
+    }
+
     public PromoCodeResponseDto getDtoById(Long id){
         return promoCodeMapper.toDto(findEntityById(id));
     }

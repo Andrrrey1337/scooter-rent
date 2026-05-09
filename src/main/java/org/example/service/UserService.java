@@ -99,9 +99,15 @@ public class UserService {
         log.info("Данные пользователя с ID {} успешно обновлены", user.getId());
 
         return userMapper.toDto(user);
-    }
+        }
 
-    public UserResponseDto updateAdminFields(Long userId, UserAdminUpdateDto dto) {
+        public void update(User user) {
+        userRepository.update(user);
+        log.info("Сущность пользователя с ID {} обновлена напрямую", user.getId());
+        }
+
+        public UserResponseDto updateAdminFields(Long userId, UserAdminUpdateDto dto) {
+
         User user = findEntityById(userId);
 
         userMapper.updateEntity(dto, user);

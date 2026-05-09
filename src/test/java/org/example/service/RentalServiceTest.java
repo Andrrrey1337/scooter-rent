@@ -8,7 +8,7 @@ import org.example.entity.*;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalMapper;
-import org.example.repository.*;
+import org.example.repository.RentalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,12 +35,10 @@ class RentalServiceTest {
     @Mock private UserService userService;
     @Mock private ScooterService scooterService;
     @Mock private TariffService tariffService;
-    @Mock private RentalRepository rentalRepository;
-    @Mock private ScooterRepository scooterRepository;
-    @Mock private UserRepository userRepository;
-    @Mock private PromoCodeRepository promoCodeRepository;
+    @Mock private PromoCodeService promoCodeService;
+    @Mock private RentalPointService rentalPointService;
     @Mock private UserSubscriptionService userSubscriptionService;
-    @Mock private RentalPointRepository rentalPointRepository;
+    @Mock private RentalRepository rentalRepository;
     @Mock private RentalMapper rentalMapper;
 
     @InjectMocks
@@ -111,7 +109,7 @@ class RentalServiceTest {
 
         assertNotNull(result);
         assertEquals(ScooterStatus.RENTED, scooter.getScooterStatus());
-        verify(userRepository).update(user);
+        verify(userService).update(user);
     }
 
     @Test
@@ -179,7 +177,7 @@ class RentalServiceTest {
         startDto.setTariffId(1L);
         startDto.setPromoCode("FAKE_PROMO");
 
-        when(promoCodeRepository.findByCode("FAKE_PROMO")).thenReturn(Optional.empty());
+        when(promoCodeService.findByCode("FAKE_PROMO")).thenThrow(new ResourceNotFoundException("Not found"));
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> rentalService.startRental(startDto));    }
 
@@ -194,7 +192,7 @@ class RentalServiceTest {
 
         when(rentalRepository.findById(1L)).thenReturn(Optional.of(rental));
         when(userSubscriptionService.findValidActiveSubscription(1L)).thenReturn(Optional.empty());
-        when(rentalPointRepository.findNearestValidParkingPoint(any(), any(), anyDouble()))
+        when(rentalPointService.findNearestValidParkingPoint(any(), any(), anyDouble()))
                 .thenReturn(Optional.of(new RentalPoint()));
         when(rentalMapper.toDto(rental)).thenReturn(responseDto);
 
@@ -203,7 +201,8 @@ class RentalServiceTest {
         assertNotNull(result);
         assertEquals(ScooterStatus.AVAILABLE, scooter.getScooterStatus());
         assertEquals(80, scooter.getBatteryLevel());
-        verify(userRepository).update(user);
+        verify(userService).update(user);
+        verify(scooterService).update(scooter);
     }
 
     @Test
@@ -238,7 +237,7 @@ class RentalServiceTest {
     @Test
     @DisplayName("findRentalsByScooterId - Успех")
     void findRentalsByScooterId_Success() {
-        when(scooterRepository.findById(1L)).thenReturn(Optional.of(scooter));
+        when(scooterService.findScooterById(1L)).thenReturn(scooter);
         when(rentalRepository.findByScooterId(1L)).thenReturn(Collections.singletonList(rental));
         when(rentalMapper.toAdminDtos(any())).thenReturn(Collections.singletonList(adminResponseDto));
 

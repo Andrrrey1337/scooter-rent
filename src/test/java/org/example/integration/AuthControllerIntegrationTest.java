@@ -18,7 +18,9 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("Интеграционный тест: Регистрация нового пользователя")
-    @Sql(scripts = "/sql/insert_auth.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/auth_register.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void registerUser_ReturnsCreated() throws Exception {
 
         //  DTO для регистрации
@@ -37,7 +39,9 @@ public class AuthControllerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("Интеграционный тест: Логин существующего пользователя")
-    @Sql(scripts = "/sql/insert_auth.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/auth_login.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void login_ReturnsJwtToken() throws Exception {
 
         // dto для логина

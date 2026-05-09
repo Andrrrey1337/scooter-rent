@@ -22,7 +22,9 @@ public class SubscriptionControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("Интеграционный тест: Получение списка всех подписок")
     @WithMockUser(username = "admin", roles = {"ADMIN"})
-    @Sql(scripts = "/sql/insert_subscriptions.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/subscriptions_all.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void getAllSubscriptions_ReturnsOk() throws Exception {
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_all_subscriptions.json"));
@@ -36,7 +38,9 @@ public class SubscriptionControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithUserDetails(value = "subuser", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Интеграционный тест: Успешная покупка подписки")
-    @Sql(scripts = "/sql/insert_subscriptions.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/subscriptions_buy.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void buySubscription_ReturnsOk() throws Exception {
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_buy_subscription.json"));

@@ -13,14 +13,14 @@ import org.example.entity.ScooterStatus;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalPointMapper;
-import org.example.mapper.ScooterMapper;
 import org.example.repository.RentalPointRepository;
-import org.example.repository.ScooterRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,9 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RentalPointService {
     private final RentalPointRepository rentalPointRepository;
-private final ScooterRepository scooterRepository;
     private final RentalPointMapper rentalPointMapper;
-    private final ScooterMapper scooterMapper;
 
     public RentalPointResponseDto createRentalPoint(RentalPointCreateDto dto) {
         validateNameUniqueness(dto.getName());
@@ -140,16 +138,6 @@ private final ScooterRepository scooterRepository;
         }
     }
 
-    // проверка данных точки с данными родителя
-    private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
-        if (null != parent.getCity() && !child.getCity().equalsIgnoreCase(parent.getCity())) {
-            throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
-        }
-        if (null != parent.getStreet() && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
-            throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
-        }
-    }
-
     // определяет вес адреса
     @Transactional(readOnly = true)
     public int getAddressLevel(RentalPoint point) {
@@ -160,8 +148,18 @@ private final ScooterRepository scooterRepository;
         if (hasHouse) return (hasCity && hasStreet) ? 3 : -1;
         if (hasStreet) return hasCity ? 2 : -1;
         if (hasCity) return 1;
-        
+
         return 0;
+    }
+
+    // проверка данных точки с данными родителя
+    private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
+        if (null != parent.getCity() && !child.getCity().equalsIgnoreCase(parent.getCity())) {
+            throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
+        }
+        if (null != parent.getStreet() && !child.getStreet().equalsIgnoreCase(parent.getStreet())) {
+            throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
+        }
     }
 
     private boolean isFieldBlank(String field) {
@@ -196,23 +194,14 @@ private final ScooterRepository scooterRepository;
         return rentalPointMapper.toDtos(rentalPointRepository.findAll());
     }
 
+    @Transactional(readOnly = true)
+    public Optional<RentalPoint> findNearestValidParkingPoint(BigDecimal latitude, BigDecimal longitude, double radius) {
+        return rentalPointRepository.findNearestValidParkingPoint(latitude, longitude, radius);
+    }
+
     public void deleteById(Long id) {
         rentalPointRepository.deleteById(id);
         log.info("Точка проката с ID {} успешно удалена", id);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ScooterAdminResponseDto> findAllScootersAtRentalPoint(Long rentalPointId) {
-        findRentalPointById(rentalPointId);
-        return scooterMapper.toAdminDtos(scooterRepository.findAllByRentalPoint(rentalPointId));
-    }
-
-    @Transactional(readOnly = true)
-    public RentalPointDataDto getRentalPointDataById(Long id) {
-        RentalPoint point = findRentalPointById(id);
-        List<Scooter> allScooters = scooterRepository.findAllByRentalPoint(id);
-        
-        return buildRentalPointDataDto(point, allScooters);
     }
 
     @Transactional(readOnly = true)
@@ -223,58 +212,5 @@ private final ScooterRepository scooterRepository;
     @Transactional(readOnly = true)
     public RentalPointResponseDto getRentalPointDtoByName(String name) {
         return rentalPointMapper.toDto(findRentalPointByName(name));
-    }
-
-    private RentalPointDataDto buildRentalPointDataDto(RentalPoint point, List<Scooter> scooters) {
-        List<Scooter> available = getAvailableScooters(scooters);
-        long rentedCount = countRentedScooters(scooters);
-        Map<String, Long> modelsSummary = buildAvailableModelsSummary(available);
-        List<ScooterAdminResponseDto> availableScooters = scooterMapper.toAdminDtos(available);
-
-        return createRentalPointDataDto(
-                point,
-                scooters.size(),
-                available.size(),
-                rentedCount,
-                modelsSummary,
-                availableScooters
-        );
-    }
-
-    private RentalPointDataDto createRentalPointDataDto(RentalPoint point,
-                                                        int totalScooters,
-                                                        int availableScootersCount,
-                                                        long rentedScootersCount,
-                                                        Map<String, Long> availableModelsSummary,
-                                                        List<ScooterAdminResponseDto> availableScooters) {
-        return RentalPointDataDto.builder()
-                .rentalPointId(point.getId())
-                .rentalPointName(point.getName())
-                .city(point.getCity())
-                .street(point.getStreet())
-                .houseNumber(point.getHouseNumber())
-                .totalScooters(totalScooters)
-                .availableScooters(availableScootersCount)
-                .rentedScooters(rentedScootersCount)
-                .availableModelsSummary(availableModelsSummary)
-                .availableScootersList(availableScooters)
-                .build();
-    }
-
-    private List<Scooter> getAvailableScooters(List<Scooter> scooters) {
-        return scooters.stream()
-                .filter(s -> ScooterStatus.AVAILABLE == s.getScooterStatus())
-                .toList();
-    }
-
-    private long countRentedScooters(List<Scooter> scooters) {
-        return scooters.stream()
-                .filter(s -> ScooterStatus.RENTED == s.getScooterStatus())
-                .count();
-    }
-
-    private Map<String, Long> buildAvailableModelsSummary(List<Scooter> availableScooters) {
-        return availableScooters.stream()
-                .collect(Collectors.groupingBy(s -> s.getScooterModel().getName(), Collectors.counting()));
     }
 }

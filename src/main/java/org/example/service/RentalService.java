@@ -11,7 +11,7 @@ import org.example.entity.*;
 import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.RentalMapper;
-import org.example.repository.*;
+import org.example.repository.RentalRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,12 +32,10 @@ public class RentalService {
     private final UserService userService;
     private final ScooterService scooterService;
     private final TariffService tariffService;
-    private final RentalRepository rentalRepository;
-    private final ScooterRepository scooterRepository;
-    private final UserRepository userRepository;
-    private final PromoCodeRepository promoCodeRepository;
+    private final PromoCodeService promoCodeService;
+    private final RentalPointService rentalPointService;
     private final UserSubscriptionService userSubscriptionService;
-    private final RentalPointRepository rentalPointRepository;
+    private final RentalRepository rentalRepository;
     private final RentalMapper rentalMapper;
 
     private static final int DEFAULT_HOLD_MINUTES = 10;
@@ -134,7 +132,7 @@ public class RentalService {
     private void holdFundsForRentalStart(User user, BigDecimal holdAmount) {
         user.setBalance(user.getBalance().subtract(holdAmount));
         user.setHeldBalance(user.getHeldBalance().add(holdAmount));
-        userRepository.update(user);
+        userService.update(user);
     }
 
     private PromoCode findValidPromoCode(String promoCodeRaw) {
@@ -143,8 +141,7 @@ public class RentalService {
             return null;
         }
 
-        PromoCode promoCode = promoCodeRepository.findByCode(promoCodeRaw)
-                .orElseThrow(() -> new ResourceNotFoundException("Промокод '" + promoCodeRaw + "' не найден"));
+        PromoCode promoCode = promoCodeService.findByCode(promoCodeRaw);
 
         if (!promoCode.getIsActive() || (null != promoCode.getEndDate() && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
             throw new BusinessException("Промокод недействителен или истек");
@@ -253,14 +250,14 @@ public class RentalService {
         BigDecimal heldAmount = user.getHeldBalance();
         user.setHeldBalance(BigDecimal.ZERO);
         user.setBalance(user.getBalance().add(heldAmount).subtract(totalPrice));
-        userRepository.update(user);
+        userService.update(user);
     }
 
     private static final double PARKING_RADIUS_METERS = 50.0;
 
     private void releaseScooterAtFinishLocation(Scooter scooter, FinishRentalDto dto) {
         // ищем ближайшую парковку уровня 3 в радиусе PARKING_RADIUS_METERS
-        RentalPoint nearestPoint = rentalPointRepository.findNearestValidParkingPoint(
+        RentalPoint nearestPoint = rentalPointService.findNearestValidParkingPoint(
                 dto.getEndLatitude(), 
                 dto.getEndLongitude(), 
                 PARKING_RADIUS_METERS
@@ -270,7 +267,7 @@ public class RentalService {
         ));
 
         applyScooterFinishState(scooter, dto, nearestPoint);
-        scooterRepository.update(scooter);
+        scooterService.update(scooter);
     }
 
     private void applyScooterFinishState(Scooter scooter, FinishRentalDto dto, RentalPoint nearestPoint) {
@@ -296,7 +293,7 @@ public class RentalService {
     }
 
     public List<RentalAdminResponseDto> findRentalsByScooterId(Long scooterId) {
-        scooterRepository.findById(scooterId);
+        scooterService.findScooterById(scooterId);
         List<Rental> rentals = rentalRepository.findByScooterId(scooterId);
 
         log.info("Получена история аренды для самоката с ID={}. Количество записей: {}", scooterId, rentals.size());

@@ -7,9 +7,9 @@ import org.example.dto.point.RentalPointResponseDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.entity.RentalPoint;
-import org.example.mapper.RentalPointMapper;
-import org.example.mapper.ScooterMapper;
+import org.example.service.RentalPointFacade;
 import org.example.service.RentalPointService;
+import org.example.service.ScooterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +32,12 @@ class RentalPointControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private RentalPointService rentalPointService;
+
+    @MockitoBean
+    private ScooterService scooterService;
+
+    @MockitoBean
+    private RentalPointFacade rentalPointFacade;
 
     private RentalPoint rentalPoint;
     private RentalPointResponseDto responseDto;
@@ -119,7 +125,7 @@ class RentalPointControllerTest extends BaseControllerTest {
     @DisplayName("GET /api/points/scooters/{id} - Самокаты на точке (Админ)")
     void getScootersAtPointById_ReturnsOk() throws Exception {
         ScooterAdminResponseDto scooterDto = new ScooterAdminResponseDto();
-        when(rentalPointService.findAllScootersAtRentalPoint(1L)).thenReturn(Collections.singletonList(scooterDto));
+        when(scooterService.getScooterAdminDtosAtRentalPoint(1L)).thenReturn(Collections.singletonList(scooterDto));
 
         mockMvc.perform(get("/api/points/scooters/1"))
                 .andExpect(status().isOk());
@@ -133,7 +139,7 @@ class RentalPointControllerTest extends BaseControllerTest {
                 .rentalPointName("Point A")
                 .build();
 
-        when(rentalPointService.getRentalPointDataById(1L)).thenReturn(dataDto);
+        when(rentalPointFacade.getRentalPointDataById(1L)).thenReturn(dataDto);
 
         mockMvc.perform(get("/api/points/data/1"))
                 .andExpect(status().isOk())

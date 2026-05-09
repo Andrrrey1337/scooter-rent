@@ -21,7 +21,9 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithUserDetails(value = "regularuser", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Интеграционный тест: Получение своего профиля")
-    @Sql(scripts = "/sql/insert_users.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/user_me.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void getMyProfile_ReturnsOk() throws Exception {
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_user_me.json"));
@@ -35,7 +37,9 @@ public class UserControllerIntegrationTest extends BaseIntegrationTest {
     @Test
     @WithUserDetails(value = "regularuser", setupBefore = TestExecutionEvent.TEST_EXECUTION)
     @DisplayName("Интеграционный тест: Пополнение своего баланса")
-    @Sql(scripts = "/sql/insert_users.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/user_balance.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(scripts = "/sql/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     void addMyBalance_ReturnsOk() throws Exception {
 
         String expectedJson = Files.readString(Paths.get("src/test/resources/examples/expected_user_balance.json"));

@@ -77,6 +77,7 @@ public class UserSubscriptionService {
 
     private void withdrawSubscriptionPriceFromUserBalance(User user, Subscription subscription) {
         user.setBalance(user.getBalance().subtract(subscription.getPrice()));
+        userService.update(user);
     }
 
     private UserSubscription buildUserSubscription(User user, Subscription subscription) {
