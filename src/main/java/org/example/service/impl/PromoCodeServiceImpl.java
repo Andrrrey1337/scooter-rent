@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
+
 @Service
 @Transactional
 @Slf4j
@@ -67,7 +70,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     public PromoCodeResponseDto updatePromoCode(Long id, PromoCodeUpdateDto promoCodeUpdateDto){
         PromoCode promoCode = findEntityById(id);
 
-        if (null != promoCodeUpdateDto.getCode() && !promoCodeUpdateDto.getCode().equals(promoCode.getCode())) {
+        if (isNotBlank(promoCodeUpdateDto.getCode()) && notEqual(promoCodeUpdateDto.getCode(), promoCode.getCode())) {
             log.info("Обновление промокода с '{}' на '{}'", promoCode.getCode(), promoCodeUpdateDto.getCode());
             if (promoCodeRepository.findByCode(promoCodeUpdateDto.getCode()).isPresent()) {
                 throw new BusinessException("Промокод '" + promoCodeUpdateDto.getCode() + "' уже существует");

@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 @Service
 @Transactional
 @Slf4j
@@ -68,7 +71,7 @@ public class TariffServiceImpl implements TariffService {
     public TariffResponseDto updateTariff(Long id, TariffUpdateDto tariffDto) {
         Tariff existTariff = findTariffById(id);
 
-        if (null != tariffDto.getName() && !tariffDto.getName().equals(existTariff.getName())) {
+        if (isNotBlank(tariffDto.getName()) && notEqual(tariffDto.getName(), existTariff.getName())) {
             log.info("Обновление названия тарифа с '{}' на '{}'", existTariff.getName(), tariffDto.getName());
             if (tariffRepository.findByName(tariffDto.getName()).isPresent()) {
                 throw new BusinessException("Тариф с названием '" + tariffDto.getName() + "' уже существует");

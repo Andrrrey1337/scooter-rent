@@ -21,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -85,14 +88,14 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateUser(Long userId, UserUpdateDto userUpdateDto) {
         User user = findEntityById(userId);
 
-        if (null != userUpdateDto.getUsername() && !userUpdateDto.getUsername().equals(user.getUsername())
+        if (isNotBlank(userUpdateDto.getUsername()) && notEqual(userUpdateDto.getUsername(), user.getUsername())
                 && userRepository.findByUsername(userUpdateDto.getUsername()).isPresent()) {
             throw new BusinessException("Пользователь с таким именем '" + userUpdateDto.getUsername() + "' уже существует");
         }
 
         userMapper.updateEntity(userUpdateDto, user);
 
-        if (null != userUpdateDto.getPassword() && !userUpdateDto.getPassword().isBlank()) {
+        if (isNotBlank(userUpdateDto.getPassword())) {
             log.info("Обновление пароля для пользователя ID={}", userId);
             user.setPassword(passwordEncoder.encode(userUpdateDto.getPassword()));
         } else {

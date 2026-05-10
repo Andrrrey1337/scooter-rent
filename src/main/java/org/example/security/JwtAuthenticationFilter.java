@@ -16,6 +16,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.startsWith;
+import static java.util.Objects.isNull;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             final String authorizationHeader = request.getHeader("Authorization");
 
-            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            if (isNull(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
                 log.info("Заголовок Authorization отсутствует или имеет неверный формат, пропуск JWT фильтра");
                 return;
             }
@@ -37,7 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtService.extractUsername(jwt);
 
             // если пользователя нет в контексте (не добавили туда в предыдущих фильтрах)
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (isNotBlank(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 // создаем объект авторизации
@@ -53,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 } else {
                     log.info("Пользователь {} заблокирован, аутентификация пропущена", username);
                 }
-            } else if (username == null) {
+            } else if (isBlank(username)) {
                 log.info("Не удалось извлечь имя пользователя из JWT токена");
             }
         } catch (Exception e) {

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -27,7 +29,7 @@ public class GlobalExceptionHandler {
         log.error("Ошибка валидации: {}", errorMessage);
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST.value()) // 400
                 .message("Ошибка валидации: " + errorMessage)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -40,7 +42,7 @@ public class GlobalExceptionHandler {
         log.error("Ошибка поиска ресурса: {}", ex.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.NOT_FOUND.value())
+                .status(HttpStatus.NOT_FOUND.value()) // 404
                 .message(ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -53,7 +55,7 @@ public class GlobalExceptionHandler {
         log.error("Бизнес-ошибка при обработке запроса: {}", ex.getMessage());
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.BAD_REQUEST.value())
+                .status(HttpStatus.BAD_REQUEST.value()) // 400
                 .message(ex.getMessage())
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -67,7 +69,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.FORBIDDEN.value()) // cтатус 403
-                .message(ex.getMessage() != null ? ex.getMessage() : "У вас нет прав для выполнения этого действия")
+                .message(defaultIfBlank(ex.getMessage(), "У вас нет прав для выполнения этого действия"))
                 .timestamp(LocalDateTime.now())
                 .build();
 
@@ -105,7 +107,7 @@ public class GlobalExceptionHandler {
         log.error("Непредвиденная внутренняя ошибка сервера: ", ex);
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value()) // 500
                 .message("Произошла внутренняя ошибка сервера")
                 .timestamp(LocalDateTime.now())
                 .build();

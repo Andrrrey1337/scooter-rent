@@ -25,7 +25,12 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.BooleanUtils.isFalse;
+import static java.util.Objects.isNull;
 
 @Service
 @Transactional
@@ -93,14 +98,14 @@ public class RentalServiceImpl implements RentalService {
         boolean isOwner = null != rental.getUser() && rental.getUser().getId().equals(currentUser.getId());
         boolean isAdmin = Role.ADMIN == currentUser.getRole();
 
-        if (!isOwner && !isAdmin) {
+        if (isFalse(isOwner) && isFalse(isAdmin)) {
             throw new AccessDeniedException("Вы не можете завершить чужую поездку!");
         }
     }
 
     private User getAuthenticatedUser() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (null == authentication || null == authentication.getPrincipal()) {
+        if (isNull(authentication) || isNull(authentication.getPrincipal())) {
             throw new AccessDeniedException("Пользователь не авторизован");
         }
         return (User) authentication.getPrincipal();
@@ -139,14 +144,14 @@ public class RentalServiceImpl implements RentalService {
     }
 
     private PromoCode findValidPromoCode(String promoCodeRaw) {
-        if (null == promoCodeRaw || promoCodeRaw.isBlank()) {
+        if (isBlank(promoCodeRaw)) {
             log.info("Промокод не предоставлен, пропуск валидации");
             return null;
         }
 
         PromoCode promoCode = promoCodeService.findByCode(promoCodeRaw);
 
-        if (!promoCode.getIsActive() || (null != promoCode.getEndDate() && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
+        if (isFalse(promoCode.getIsActive()) || (null != promoCode.getEndDate() && promoCode.getEndDate().isBefore(LocalDateTime.now()))) {
             throw new BusinessException("Промокод недействителен или истек");
         }
         return promoCode;
@@ -240,7 +245,7 @@ public class RentalServiceImpl implements RentalService {
     }
 
     private BigDecimal applyPromoCodeDiscount(BigDecimal totalPrice, PromoCode promoCode) {
-        if (null == promoCode) {
+        if (isNull(promoCode)) {
             log.info("К поездке не применен промокод");
             return totalPrice;
         }

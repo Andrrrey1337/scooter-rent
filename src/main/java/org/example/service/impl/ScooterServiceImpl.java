@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -52,7 +55,7 @@ public class ScooterServiceImpl implements ScooterService {
         Scooter scooter = findScooterById(id);
         scooterMapper.updateEntity(scooterDto, scooter);
 
-        if (null != scooterDto.getRentalPointId()) {
+        if (nonNull(scooterDto.getRentalPointId())) {
             assignRentalPoint(scooter, scooterDto.getRentalPointId());
         } else {
             log.info("Новая точка проката не указана для самоката ID={}, пропуск перепривязки", id);

@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.ObjectUtils.notEqual;
+
 @Service
 @Transactional
 @Slf4j
@@ -67,7 +70,7 @@ public class ScooterModelServiceImpl implements ScooterModelService {
     public ScooterModelResponseDto updateScooterModel(Long id, ScooterModelUpdateDto scooterModelUpdateDto) {
         ScooterModel scooterModel = findScooterModelById(id);
 
-        if (null != scooterModelUpdateDto.getName() && !scooterModelUpdateDto.getName().equals(scooterModel.getName())) {
+        if (isNotBlank(scooterModelUpdateDto.getName()) && notEqual(scooterModelUpdateDto.getName(), scooterModel.getName())) {
             log.info("Обновление названия модели самоката с '{}' на '{}'", scooterModel.getName(), scooterModelUpdateDto.getName());
             if (scooterModelRepository.findByName(scooterModelUpdateDto.getName()).isPresent()) {
                 throw new BusinessException("Модель самоката с названием '" + scooterModelUpdateDto.getName() + "' уже существует");
