@@ -25,21 +25,22 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
 
     public JwtResponse login(JwtRequest jwtRequest) {
+        String username = jwtRequest.getUsername();
         // авторизация пользователя (благодаря бину AuthenticationManager пароль захешируется и сверится с тем что в бд)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        jwtRequest.getUsername(),
+                        username,
                         jwtRequest.getPassword()
                 )
         );
 
         // получаем пользователя из бд
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(jwtRequest.getUsername());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
         // генерим для него токен
         String token = jwtService.generateToken(userDetails);
 
-        log.info("Пользователь {} успешно вошел в систему", jwtRequest.getUsername());
+        log.info("Пользователь {} успешно вошел в систему", username);
 
         return new JwtResponse(token);
     }

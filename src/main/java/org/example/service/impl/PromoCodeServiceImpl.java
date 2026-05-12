@@ -1,5 +1,6 @@
 package org.example.service.impl;
 
+import org.example.service.*;
 import org.example.service.PromoCodeService;
 
 import lombok.RequiredArgsConstructor;
@@ -32,12 +33,23 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     public PromoCodeResponseDto createPromoCode(PromoCodeCreateDto dto){
         PromoCode promoCode = promoCodeMapper.toEntity(dto);
         String code = promoCode.getCode();
+
         Optional<PromoCode> existingPromoCode = promoCodeRepository.findByCode(code);
         if (existingPromoCode.isPresent()){
             throw new BusinessException("Промокод " + code + " уже существует");
         }
         log.info("Создан новый промокод: {}", code);
+
         return promoCodeMapper.toDto(promoCodeRepository.create(promoCode));
+    }
+
+    public PromoCode findEntityById(Long id){
+        PromoCode promoCode = promoCodeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
+
+        log.info("Успешно найден промокод с ID: {}", id);
+
+        return promoCode;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +65,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
     public List<PromoCodeResponseDto> findAllPromoCodes() {
         List<PromoCode> promoCodes = promoCodeRepository.findAll();
         log.info("Получен список всех промокодов. Количество: {}", promoCodes.size());
+
         return promoCodeMapper.toDtos(promoCodes);
     }
 
@@ -73,7 +86,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
             }
             log.info("Обновление промокода с '{}' на '{}'", oldCode, newCode);
         } else {
-            log.info("Промокод не предоставлен или не изменилось, пропуск валидации кода");
+            log.info("Промокод не предоставлен или не изменился, пропуск валидации кода");
         }
 
         promoCodeMapper.updatePromoCode(promoCodeUpdateDto, promoCode);
@@ -81,12 +94,5 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
         return promoCodeMapper.toDto(promoCode);
     }
-
-    private PromoCode findEntityById(Long id) {
-        PromoCode promoCode = promoCodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
-
-        log.info("Успешно найден промокод с ID: {}", id);
-        return promoCode;
-    }
 }
+

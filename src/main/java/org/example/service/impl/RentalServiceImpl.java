@@ -111,7 +111,7 @@ public class RentalServiceImpl implements RentalService {
     }
 
     private void validateRentalFinish(Rental rental) {
-        if (!rental.getIsActive()) {
+        if (isFalse(rental.getIsActive())) {
             throw new BusinessException("Эта поездка уже была завершена ранее");
         }
 

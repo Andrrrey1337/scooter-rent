@@ -45,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtService.extractUsername(jwt);
 
             // если пользователя нет в контексте (не добавили туда в предыдущих фильтрах)
-            if (isNotBlank(username) && isNull(SecurityContextHolder.getContext().getAuthentication())) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            if (isNotBlank(username) && isNull(auth)) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
                 // создаем объект авторизации

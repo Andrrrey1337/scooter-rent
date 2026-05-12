@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.apache.commons.lang3.BooleanUtils.isFalse;
 import static org.apache.commons.lang3.ObjectUtils.notEqual;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -49,7 +50,9 @@ public class RentalPointServiceImpl implements RentalPointService {
         List<RentalPointResponseDto> savedPoints = dtos.stream()
                 .map(this::createRentalPoint)
                 .toList();
+
         log.info("Успешно завершено пакетное создание {} точек проката", savedPoints.size());
+
         return savedPoints;
     }
 
@@ -70,9 +73,9 @@ public class RentalPointServiceImpl implements RentalPointService {
 
     @Transactional(readOnly = true)
     public int getAddressLevel(RentalPoint point) {
-        boolean hasCity = !isFieldBlank(point.getCity());
-        boolean hasStreet = !isFieldBlank(point.getStreet());
-        boolean hasHouse = !isFieldBlank(point.getHouseNumber());
+        boolean hasCity = isBlank(point.getCity());
+        boolean hasStreet = isBlank(point.getStreet());
+        boolean hasHouse = isBlank(point.getHouseNumber());
 
         if (hasHouse) return (hasCity && hasStreet) ? 3 : -1;
         if (hasStreet) return hasCity ? 2 : -1;
@@ -151,6 +154,7 @@ public class RentalPointServiceImpl implements RentalPointService {
         }
     }
 
+    // проверка связи родителя и ребенка
     private void validateAndApplyHierarchy(RentalPoint child, RentalPoint parent) {
         applyInheritance(child, parent);
         validateAddressLevels(child, parent);
@@ -159,17 +163,22 @@ public class RentalPointServiceImpl implements RentalPointService {
         child.setParent(parent);
     }
 
+    // заполнение данных (если не указаны) из родителя
     private void applyInheritance(RentalPoint child, RentalPoint parent) {
-        if (isFieldBlank(child.getCity())) {
-            log.info("Наследование города '{}' от родительской точки ID={}", parent.getCity(), parent.getId());
-            child.setCity(parent.getCity());
+        String parentCity = parent.getCity();
+        String parentStreet = parent.getStreet();
+
+        if (isBlank(child.getCity())) {
+            log.info("Наследование города '{}' от родительской точки ID={}", parentCity, parent.getId());
+            child.setCity(parentCity);
         }
-        if (isFieldBlank(child.getStreet())) {
-            log.info("Наследование улицы '{}' от родительской точки ID={}", parent.getStreet(), parent.getId());
-            child.setStreet(parent.getStreet());
+        if (isBlank(child.getStreet())) {
+            log.info("Наследование улицы '{}' от родительской точки ID={}", parentStreet, parent.getId());
+            child.setStreet(parentStreet);
         }
     }
 
+    // проверка последовательности уровней
     private void validateAddressLevels(RentalPoint child, RentalPoint parent) {
         int childLevel = getAddressLevel(child);
         int parentLevel = getAddressLevel(parent);
@@ -185,6 +194,7 @@ public class RentalPointServiceImpl implements RentalPointService {
         }
     }
 
+    // если у точки нет родителя, она должна быть городом
     private void validateRootPoint(RentalPoint point) {
         if (1 != getAddressLevel(point)) {
             throw new BusinessException("Точка без родителя должна быть уровня 'Город' (указан только город)");
@@ -194,17 +204,15 @@ public class RentalPointServiceImpl implements RentalPointService {
     private void validateAddressConsistency(RentalPoint child, RentalPoint parent) {
         String parentCity = parent.getCity();
         String parentStreet = parent.getStreet();
-        if (nonNull(parentCity) && !parentCity.equalsIgnoreCase(child.getCity())) {
+
+        if (nonNull(parentCity) && isFalse(parentCity.equalsIgnoreCase(child.getCity()))) {
             throw new BusinessException("Город дочерней точки не совпадает с городом родителя");
         }
-        if (nonNull(parentStreet) && !parentStreet.equalsIgnoreCase(child.getStreet())) {
+        if (nonNull(parentStreet) && isFalse(parentStreet.equalsIgnoreCase(child.getStreet()))) {
             throw new BusinessException("Улица дочерней точки не совпадает с улицей родителя");
         }
     }
 
-    private boolean isFieldBlank(String field) {
-        return isBlank(field);
-    }
 
     private void validateNameUniqueness(String name) {
         Optional<RentalPoint> existingPoint = rentalPointRepository.findRentalPointByName(name);
@@ -213,3 +221,6 @@ public class RentalPointServiceImpl implements RentalPointService {
         }
     }
 }
+
+
+
