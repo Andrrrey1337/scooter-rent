@@ -9,6 +9,7 @@ import org.example.dto.point.RentalPointDataDto;
 import org.example.dto.point.RentalPointResponseDto;
 import org.example.dto.point.RentalPointUpdateDto;
 import org.example.dto.scooter.ScooterAdminResponseDto;
+import org.example.dto.scooter.ScooterResponseDto;
 import org.example.service.RentalPointFacade;
 import org.example.service.RentalPointService;
 import org.example.service.ScooterService;
@@ -30,7 +31,7 @@ public class RentalPointController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать новую точку проката", description = "Доступно только администраторам")
+    @Operation(summary = "Создать новую точку проката (админ)")
     public ResponseEntity<RentalPointResponseDto> createRentalPoint(@Valid @RequestBody RentalPointCreateDto rentalPointCreateDto) {
         RentalPointResponseDto rentalPoint = rentalPointService.createRentalPoint(rentalPointCreateDto);
         return new ResponseEntity<>(rentalPoint, HttpStatus.CREATED);
@@ -38,7 +39,7 @@ public class RentalPointController {
 
     @PostMapping("/batch")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать несколько точек проката", description = "Пакетное добавление новых точек")
+    @Operation(summary = "Создать несколько точек проката (админ)", description = "Пакетное добавление новых точек")
     public ResponseEntity<List<RentalPointResponseDto>> createRentalPointsBatch(
             @Valid @RequestBody List<RentalPointCreateDto> dtos) {
         List<RentalPointResponseDto> rentalPoints = rentalPointService.createRentalPointsBatch(dtos);
@@ -68,7 +69,7 @@ public class RentalPointController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Обновить данные точки проката", description = "Частичное обновление полей")
+    @Operation(summary = "Обновить данные точки проката (админ)", description = "Частичное обновление полей")
     public ResponseEntity<RentalPointResponseDto> updateRentalPoint(
             @PathVariable Long id, 
             @Valid @RequestBody RentalPointUpdateDto rentalPointUpdateDto) {
@@ -78,23 +79,24 @@ public class RentalPointController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить точку проката")
+    @Operation(summary = "Удалить точку проката (админ)")
     public ResponseEntity<Void> deleteRentalPoint(@PathVariable Long id) {
         rentalPointService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/scooters/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить список всех самокатов на точке проката (админ)")
-    public ResponseEntity<List<ScooterAdminResponseDto>> getScootersAtPointById(@PathVariable Long id) {
-        List<ScooterAdminResponseDto> scooters = scooterService.getScooterAdminDtosAtRentalPoint(id);
+    @Operation(summary = "Получить список доступных самокатов на точке проката", description = "Возвращает только активные и заряженные самокаты, доступные для аренды")
+    public ResponseEntity<List<ScooterResponseDto>> getAvailableScootersAtPointById(
+            @PathVariable Long id,
+            @RequestParam(value = "minBattery", defaultValue = "20") Integer minBatteryLevel) {
+        List<ScooterResponseDto> scooters = scooterService.findAvailableScooters(id, minBatteryLevel);
         return ResponseEntity.ok(scooters);
     }
 
     @GetMapping("/data/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить детальную статистику по точке проката", description = "Количество свободных/занятых самокатов, список моделей")
+    @Operation(summary = "Получить детальную статистику по точке проката (админ)", description = "Количество свободных/занятых самокатов, список моделей")
     public ResponseEntity<RentalPointDataDto> getRentalPointDataById(@PathVariable Long id) { // только для админов
         RentalPointDataDto data = rentalPointFacade.getRentalPointDataById(id);
         return ResponseEntity.ok(data);

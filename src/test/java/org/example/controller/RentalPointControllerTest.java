@@ -122,13 +122,15 @@ class RentalPointControllerTest extends BaseControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/points/scooters/{id} - Самокаты на точке (Админ)")
+    @DisplayName("GET /api/points/scooters/{id} - Доступные самокаты на точке")
     void getScootersAtPointById_ReturnsOk() throws Exception {
-        ScooterAdminResponseDto scooterDto = new ScooterAdminResponseDto();
-        when(scooterService.getScooterAdminDtosAtRentalPoint(1L)).thenReturn(Collections.singletonList(scooterDto));
+        ScooterResponseDto scooterDto = new ScooterResponseDto();
+        scooterDto.setSerialNumber("SN123");
+        when(scooterService.findAvailableScooters(eq(1L), any())).thenReturn(Collections.singletonList(scooterDto));
 
         mockMvc.perform(get("/api/points/scooters/1"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].serialNumber").value("SN123"));
     }
 
     @Test

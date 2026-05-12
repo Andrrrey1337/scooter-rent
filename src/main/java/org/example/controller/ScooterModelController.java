@@ -24,7 +24,7 @@ public class ScooterModelController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать новую модель самоката")
+    @Operation(summary = "Создать новую модель самоката (админ)")
     public ResponseEntity<ScooterModelResponseDto> createScooterModel(
             @Valid @RequestBody ScooterModelCreateDto scooterModelCreateDto) {
         ScooterModelResponseDto scooterModel = scooterModelService.createScooterModel(scooterModelCreateDto);
@@ -47,7 +47,7 @@ public class ScooterModelController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Обновить характеристики модели")
+    @Operation(summary = "Обновить характеристики модели (админ)")
     public ResponseEntity<ScooterModelResponseDto> updateScooterModel(
             @PathVariable Long id, 
             @Valid @RequestBody ScooterModelUpdateDto scooterModelUpdateDto) {
@@ -57,7 +57,7 @@ public class ScooterModelController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить модель из системы")
+    @Operation(summary = "Удалить модель из системы (админ)")
     public ResponseEntity<Void> deleteScooterModel(@PathVariable Long id) {
         scooterModelService.deleteScooterModelById(id);
         return ResponseEntity.noContent().build();

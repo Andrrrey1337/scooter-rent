@@ -26,7 +26,7 @@ public class ScooterController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Добавить новый самокат", description = "Доступно только администраторам")
+    @Operation(summary = "Добавить новый самокат (админ)")
     public ResponseEntity<ScooterAdminResponseDto> createScooter(@Valid @RequestBody ScooterCreateDto scooterCreateDto) {
         ScooterAdminResponseDto scooter = scooterService.createScooter(scooterCreateDto);
         return new ResponseEntity<>(scooter, HttpStatus.CREATED);
@@ -34,7 +34,7 @@ public class ScooterController {
 
     @PostMapping("/batch")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Добавить несколько самокатов", description = "Пакетное добавление новых самокатов")
+    @Operation(summary = "Добавить несколько самокатов (админ)", description = "Пакетное добавление новых самокатов")
     public ResponseEntity<List<ScooterAdminResponseDto>> createScootersBatch(
             @Valid @RequestBody List<ScooterCreateDto> dtos) {
         List<ScooterAdminResponseDto> scooters = scooterService.createScootersBatch(dtos);
@@ -56,18 +56,9 @@ public class ScooterController {
         return ResponseEntity.ok(scooter);
     }
 
-    @GetMapping("/available")
-    @Operation(summary = "Получить список доступных самокатов на точке", description = "Фильтрация по ID точки и минимальному уровню заряда")
-    public ResponseEntity<List<ScooterResponseDto>> getAvailableScooters( // всем
-            @RequestParam("pointId") Long id,
-            @RequestParam(value = "minBattery", defaultValue = "20") Integer minBatteryLevel) {
-        List<ScooterResponseDto> scooters = scooterService.findAvailableScooters(id, minBatteryLevel);
-        return ResponseEntity.ok(scooters);
-    }
-
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить самокат из системы")
+    @Operation(summary = "Удалить самокат из системы (админ)")
     public ResponseEntity<Void> deleteScooter(@PathVariable Long id) {
         scooterService.deleteScooterById(id);
         return ResponseEntity.noContent().build();

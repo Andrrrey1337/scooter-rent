@@ -24,7 +24,7 @@ public class TariffController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать новый тариф")
+    @Operation(summary = "Создать новый тариф (админ)")
     public ResponseEntity<TariffResponseDto> createTariff(@Valid @RequestBody TariffCreateDto tariffCreateDto) {
         TariffResponseDto tariff = tariffService.createTariff(tariffCreateDto);
         return new ResponseEntity<>(tariff, HttpStatus.CREATED); // 201 статус
@@ -53,7 +53,7 @@ public class TariffController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Обновить параметры тарифа")
+    @Operation(summary = "Обновить параметры тарифа (админ)")
     public ResponseEntity<TariffResponseDto> updateTariff(@PathVariable Long id, @Valid @RequestBody TariffUpdateDto tariffUpdateDto) {
         TariffResponseDto tariff = tariffService.updateTariff(id, tariffUpdateDto);
         return ResponseEntity.ok(tariff);
@@ -61,7 +61,7 @@ public class TariffController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить тариф")
+    @Operation(summary = "Удалить тариф (админ)")
     public ResponseEntity<Void> deleteTariff(@PathVariable Long id) {
         tariffService.deleteTariffById(id);
         return ResponseEntity.noContent().build(); // 204 статус

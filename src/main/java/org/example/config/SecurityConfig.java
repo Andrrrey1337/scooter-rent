@@ -48,8 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/tariffs/**").permitAll() // просмотр тарифов
                         .requestMatchers(HttpMethod.GET, "/api/scooter-models/**").permitAll() // просмотр моделей
                         .requestMatchers(HttpMethod.GET, "/api/points/**").permitAll() // просмотр точек
-                        .requestMatchers(HttpMethod.POST, "/api/scooters/available").permitAll() // получить доступные самокаты
-                        .requestMatchers(HttpMethod.POST, "/api/scooters/number/**").permitAll() // самокат по номеру
+                        .requestMatchers(HttpMethod.GET, "/api/scooters/number/**").permitAll() // самокат по номеру
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll() // документация swagger
                         .anyRequest().authenticated()
                 )

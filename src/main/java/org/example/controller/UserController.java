@@ -39,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить пользователя по ID (админ/владелец)")
+    @Operation(summary = "Получить пользователя по ID (админ/владелец)", description = "Доступно администраторам или самому владельцу аккаунта")
     @PreAuthorize("hasRole('ADMIN') or #id == authentication.principal.id")
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) { // админам или самому себе
         UserResponseDto user = userService.getDtoById(id);
@@ -48,7 +48,7 @@ public class UserController {
 
     @PostMapping("/{id}/balance")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Пополнить баланс")
+    @Operation(summary = "Пополнить баланс (админ)")
     public ResponseEntity<UserResponseDto> addBalance(@PathVariable Long id, @RequestParam BigDecimal amount) {
         UserResponseDto user = userService.addBalance(id, amount);
         return ResponseEntity.ok(user);
@@ -63,7 +63,7 @@ public class UserController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Обновить личную информацию пользователя", description = "Изменение имени или пароля.")
+    @Operation(summary = "Обновить личную информацию пользователя (админ)", description = "Изменение имени или пароля.")
     public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long id,@Valid @RequestBody UserUpdateDto userUpdateDto) {
         UserResponseDto user = userService.updateUser(id,userUpdateDto);
         return ResponseEntity.ok(user);

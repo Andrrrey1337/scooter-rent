@@ -91,17 +91,6 @@ class ScooterControllerTest extends BaseControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/scooters/available - Доступные на точке")
-    void getAvailableScooters_ReturnsOk() throws Exception {
-        when(scooterService.findAvailableScooters(eq(1L), any())).thenReturn(Collections.singletonList(scooterResponseDto));
-
-        mockMvc.perform(get("/api/scooters/available")
-                        .param("pointId", "1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].serialNumber").value("SN123"));
-    }
-
-    @Test
     @DisplayName("DELETE /api/scooters/{id} - Удалить (Админ)")
     void deleteScooter_ReturnsNoContent() throws Exception {
         mockMvc.perform(delete("/api/scooters/1"))

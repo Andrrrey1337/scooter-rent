@@ -29,7 +29,7 @@ public class SubscriptionController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Создать новый абонемент (Админ)")
+    @Operation(summary = "Создать новый абонемент (админ)")
     public ResponseEntity<SubscriptionResponseDto> create(@Valid @RequestBody SubscriptionCreateDto dto) {
         SubscriptionResponseDto subscription = subscriptionService.createSubscription(dto);
         return new ResponseEntity<>(subscription, HttpStatus.CREATED);
@@ -44,7 +44,7 @@ public class SubscriptionController {
     }
 
     @GetMapping
-    @Operation(summary = "Посмотреть список всех абонементов (Все)")
+    @Operation(summary = "Посмотреть список всех абонементов")
     public ResponseEntity<List<SubscriptionResponseDto>> getAll() {
         List<SubscriptionResponseDto> subscriptions = subscriptionService.findAllSubscriptions();
         return ResponseEntity.ok(subscriptions);
@@ -52,7 +52,7 @@ public class SubscriptionController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить абонемент по его id (Админ)")
+    @Operation(summary = "Получить абонемент по его id (админ)")
     public ResponseEntity<SubscriptionResponseDto> getSubscriptionById(@PathVariable Long id) {
         SubscriptionResponseDto subscription = subscriptionService.getSubscriptionDtoById(id);
         return ResponseEntity.ok(subscription);
@@ -74,7 +74,7 @@ public class SubscriptionController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Изменить условия абонемента (Админ)")
+    @Operation(summary = "Изменить условия абонемента (админ)")
     public ResponseEntity<SubscriptionResponseDto> update(@PathVariable Long id, @Valid @RequestBody SubscriptionUpdateDto dto) {
         SubscriptionResponseDto subscription = subscriptionService.updateSubscription(id, dto);
         return ResponseEntity.ok(subscription);
@@ -82,7 +82,7 @@ public class SubscriptionController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Удалить абонемент (Админ)")
+    @Operation(summary = "Удалить абонемент (админ)")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         subscriptionService.deleteSubscription(id);
         return ResponseEntity.noContent().build();

@@ -41,7 +41,7 @@ public class RentalController {
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Получить историю аренды пользователя")
+    @Operation(summary = "Получить история аренды пользователя (админ)")
     public ResponseEntity<List<RentalResponseDto>> getUserRentals(@PathVariable Long userId) {
         List<RentalResponseDto> rentals = rentalService.findRentalsByUserId(userId);
         return ResponseEntity.ok(rentals);
