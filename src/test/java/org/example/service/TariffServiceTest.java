@@ -96,10 +96,11 @@ class TariffServiceTest {
 
     @Test
     @DisplayName("Успешный поиск тарифа по названию")
-    void findTariffByName_Success() {
+    void getTariffDtoByName_Success() {
         when(tariffRepository.findByName("Базовый")).thenReturn(Optional.of(testTariff));
+        when(tariffMapper.toDto(testTariff)).thenReturn(tariffResponseDto);
 
-        Tariff result = tariffService.findTariffByName("Базовый");
+        TariffResponseDto result = tariffService.getTariffDtoByName("Базовый");
 
         assertNotNull(result);
         assertEquals("Базовый", result.getName());

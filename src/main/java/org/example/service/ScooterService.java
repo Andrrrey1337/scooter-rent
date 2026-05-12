@@ -1,19 +1,11 @@
 package org.example.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.dto.scooter.ScooterAdminResponseDto;
 import org.example.dto.scooter.ScooterCreateDto;
 import org.example.dto.scooter.ScooterResponseDto;
 import org.example.dto.scooter.ScooterUpdateDto;
-import org.example.entity.RentalPoint;
 import org.example.entity.Scooter;
-import org.example.exception.BusinessException;
-import org.example.exception.ResourceNotFoundException;
-import org.example.mapper.ScooterMapper;
-import org.example.repository.ScooterRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 public interface ScooterService {

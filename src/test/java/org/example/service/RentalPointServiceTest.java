@@ -103,10 +103,11 @@ class RentalPointServiceTest {
     }
 
     @Test
-    @DisplayName("findRentalPointByName - Успех")
-    void findRentalPointByName_Success() {
+    @DisplayName("getRentalPointDtoByName - Успех")
+    void getRentalPointDtoByName_Success() {
         when(rentalPointRepository.findRentalPointByName(name)).thenReturn(Optional.of(rentalPoint));
-        RentalPoint result = rentalPointService.findRentalPointByName(name);
+        when(rentalPointMapper.toDto(rentalPoint)).thenReturn(rentalPointResponseDto);
+        RentalPointResponseDto result = rentalPointService.getRentalPointDtoByName(name);
         assertEquals(name, result.getName());
     }
 

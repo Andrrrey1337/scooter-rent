@@ -1,6 +1,5 @@
 package org.example.service.impl;
 
-import org.example.service.*;
 import org.example.service.PromoCodeService;
 
 import lombok.RequiredArgsConstructor;
@@ -41,14 +40,6 @@ public class PromoCodeServiceImpl implements PromoCodeService {
         return promoCodeMapper.toDto(promoCodeRepository.create(promoCode));
     }
 
-    public PromoCode findEntityById(Long id){
-        PromoCode promoCode = promoCodeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
-
-        log.info("Успешно найден промокод с ID: {}", id);
-        return promoCode;
-    }
-
     @Transactional(readOnly = true)
     public PromoCode findByCode(String code) {
         return promoCodeRepository.findByCode(code)
@@ -82,7 +73,7 @@ public class PromoCodeServiceImpl implements PromoCodeService {
             }
             log.info("Обновление промокода с '{}' на '{}'", oldCode, newCode);
         } else {
-            log.info("Промокод не предоставлен или не изменился, пропуск валидации кода");
+            log.info("Промокод не предоставлен или не изменилось, пропуск валидации кода");
         }
 
         promoCodeMapper.updatePromoCode(promoCodeUpdateDto, promoCode);
@@ -90,5 +81,12 @@ public class PromoCodeServiceImpl implements PromoCodeService {
 
         return promoCodeMapper.toDto(promoCode);
     }
-}
 
+    private PromoCode findEntityById(Long id) {
+        PromoCode promoCode = promoCodeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Промокод с ID " + id + " не найден"));
+
+        log.info("Успешно найден промокод с ID: {}", id);
+        return promoCode;
+    }
+}

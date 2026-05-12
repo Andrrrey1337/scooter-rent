@@ -89,6 +89,27 @@ public class RentalServiceImpl implements RentalService {
         return rentalMapper.toDto(rental);
     }
 
+    public List<RentalResponseDto> findRentalsByUserId(Long userId) {
+        userService.findEntityById(userId);
+        List<Rental> rentals = rentalRepository.findAllByUserId(userId);
+
+        log.info("Получена история поездок для пользователя с ID={}. Количество записей: {}", userId, rentals.size());
+
+        return rentalMapper.toDtos(rentals);
+    }
+
+    public List<RentalAdminResponseDto> findRentalsByScooterId(Long scooterId) {
+        scooterService.findScooterById(scooterId);
+        List<Rental> rentals = rentalRepository.findByScooterId(scooterId);
+
+        log.info("Получена история аренды для самоката с ID={}. Количество записей: {}", scooterId, rentals.size());
+
+        return rentalMapper.toAdminDtos(rentals);
+    }
+
+    private record PricingContext(BigDecimal tariffPrice, BigDecimal effectiveDuration) {
+    }
+
     private void validateRentalFinish(Rental rental) {
         if (!rental.getIsActive()) {
             throw new BusinessException("Эта поездка уже была завершена ранее");
@@ -307,26 +328,5 @@ public class RentalServiceImpl implements RentalService {
         scooter.setBatteryLevel(dto.getBatteryLevel());
 
         scooter.setMileage(scooter.getMileage().add(dto.getDistance()));
-    }
-
-    public List<RentalResponseDto> findRentalsByUserId(Long userId) {
-        userService.findEntityById(userId);
-        List<Rental> rentals = rentalRepository.findAllByUserId(userId);
-
-        log.info("Получена история поездок для пользователя с ID={}. Количество записей: {}", userId, rentals.size());
-
-        return rentalMapper.toDtos(rentals);
-    }
-
-    public List<RentalAdminResponseDto> findRentalsByScooterId(Long scooterId) {
-        scooterService.findScooterById(scooterId);
-        List<Rental> rentals = rentalRepository.findByScooterId(scooterId);
-
-        log.info("Получена история аренды для самоката с ID={}. Количество записей: {}", scooterId, rentals.size());
-
-        return rentalMapper.toAdminDtos(rentals);
-    }
-
-    private record PricingContext(BigDecimal tariffPrice, BigDecimal effectiveDuration) {
     }
 }

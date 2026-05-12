@@ -1,18 +1,8 @@
 package org.example.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.example.dto.subscription.UserSubscriptionResponseDto;
-import org.example.entity.Subscription;
-import org.example.entity.User;
 import org.example.entity.UserSubscription;
-import org.example.exception.BusinessException;
-import org.example.exception.ResourceNotFoundException;
-import org.example.mapper.UserSubscriptionMapper;
-import org.example.repository.UserSubscriptionRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Optional;
 

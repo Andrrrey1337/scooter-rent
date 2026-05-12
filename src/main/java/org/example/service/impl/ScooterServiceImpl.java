@@ -1,8 +1,5 @@
 package org.example.service.impl;
 
-import org.example.service.*;
-import org.example.service.ScooterService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.dto.scooter.ScooterAdminResponseDto;
@@ -15,13 +12,14 @@ import org.example.exception.BusinessException;
 import org.example.exception.ResourceNotFoundException;
 import org.example.mapper.ScooterMapper;
 import org.example.repository.ScooterRepository;
+import org.example.service.RentalPointService;
+import org.example.service.ScooterService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Service
@@ -67,34 +65,6 @@ public class ScooterServiceImpl implements ScooterService {
         return scooterMapper.toAdminDto(scooter);
     }
 
-    // установка точки
-    private void assignRentalPoint(Scooter scooter, Long rentalPointId) {
-        if (null == rentalPointId) {
-            log.info("Метод assignRentalPoint вызван с null ID, пропуск");
-            return;
-        }
-
-        RentalPoint point = validateRentalPointForScooter(rentalPointId);
-        scooter.setRentalPoint(point);
-    }
-
-    // есть ли у точки дочерние элементы
-    private RentalPoint validateRentalPointForScooter(Long rentalPointId) {
-        RentalPoint point = rentalPointService.findRentalPointById(rentalPointId);
-
-        if (rentalPointService.getAddressLevel(point) != 3) {
-            throw new BusinessException("Самокат можно привязать только к конечной точке проката");
-        }
-        return point;
-    }
-
-    private void validateSerialNumberUniqueness(String serialNumber) {
-        Optional<Scooter> existingScooter = scooterRepository.findBySerialNumber(serialNumber);
-        if (existingScooter.isPresent()) {
-            throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
-        }
-    }
-
     @Transactional(readOnly = true)
     public List<Scooter> findAllByRentalPoint(Long rentalPointId) {
         return scooterRepository.findAllByRentalPoint(rentalPointId);
@@ -137,5 +107,33 @@ public class ScooterServiceImpl implements ScooterService {
     public void deleteScooterById(Long scooterId) {
         scooterRepository.deleteById(scooterId);
         log.info("Самокат с ID {} успешно удален из базы", scooterId);
+    }
+
+    // установка точки
+    private void assignRentalPoint(Scooter scooter, Long rentalPointId) {
+        if (null == rentalPointId) {
+            log.info("Метод assignRentalPoint вызван с null ID, пропуск");
+            return;
+        }
+
+        RentalPoint point = validateRentalPointForScooter(rentalPointId);
+        scooter.setRentalPoint(point);
+    }
+
+    // есть ли у точки дочерние элементы
+    private RentalPoint validateRentalPointForScooter(Long rentalPointId) {
+        RentalPoint point = rentalPointService.findRentalPointById(rentalPointId);
+
+        if (rentalPointService.getAddressLevel(point) != 3) {
+            throw new BusinessException("Самокат можно привязать только к конечной точке проката");
+        }
+        return point;
+    }
+
+    private void validateSerialNumberUniqueness(String serialNumber) {
+        Optional<Scooter> existingScooter = scooterRepository.findBySerialNumber(serialNumber);
+        if (existingScooter.isPresent()) {
+            throw new BusinessException("Самокат с серийным номером " + serialNumber + " уже существует в базе");
+        }
     }
 }

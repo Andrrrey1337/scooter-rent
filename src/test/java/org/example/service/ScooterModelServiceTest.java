@@ -96,6 +96,22 @@ class ScooterModelServiceTest {
     }
 
     @Test
+    @DisplayName("getScooterModelDtoById - Успех")
+    void getScooterModelDtoById_Success() {
+        when(scooterModelRepository.findById(id)).thenReturn(Optional.of(scooterModel));
+        when(scooterModelMapper.toDto(scooterModel)).thenReturn(scooterModelResponseDto);
+        ScooterModelResponseDto result = scooterModelService.getScooterModelDtoById(id);
+        assertEquals(id, result.getId());
+    }
+
+    @Test
+    @DisplayName("getScooterModelDtoById - Не найдена")
+    void getScooterModelDtoById_NotFound_ThrowsResourceNotFoundException() {
+        when(scooterModelRepository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> scooterModelService.getScooterModelDtoById(id));
+    }
+
+    @Test
     @DisplayName("findAllScooterModel - Успех")
     void findAllScooterModel_Success() {
         when(scooterModelRepository.findAll()).thenReturn(Collections.singletonList(scooterModel));

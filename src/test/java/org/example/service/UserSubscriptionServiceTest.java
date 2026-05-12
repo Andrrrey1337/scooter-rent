@@ -125,8 +125,8 @@ class UserSubscriptionServiceTest {
     }
 
     @Test
-    @DisplayName("findPurchaseHistory - Успех")
-    void findPurchaseHistory_Success() {
+    @DisplayName("findPurchaseHistoryDto - Успех")
+    void findPurchaseHistoryDto_Success() {
         when(userSubscriptionRepository.findAllByUserId(1L)).thenReturn(Collections.singletonList(userSubscription));
         List<UserSubscription> result = userSubscriptionService.findPurchaseHistory(1L);
 

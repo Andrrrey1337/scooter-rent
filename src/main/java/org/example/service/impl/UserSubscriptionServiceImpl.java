@@ -1,7 +1,8 @@
 package org.example.service.impl;
 
-import org.example.service.*;
 import org.example.service.UserSubscriptionService;
+import org.example.service.UserService;
+import org.example.service.SubscriptionService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +68,30 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         userSubscriptionRepository.update(userSubscription);
     }
 
+    public UserSubscription findActiveSubscription(Long userId) { // активный абонемент
+        return findValidActiveSubscription(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("У вас нет активного абонемента"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserSubscription> findPurchaseHistory(Long userId) { // История покупок абонементов
+        List<UserSubscription> history = userSubscriptionRepository.findAllByUserId(userId);
+        log.info("Получена история подписок для пользователя ID={}. Записей: {}", userId, history.size());
+        return history;
+    }
+
+    @Transactional(readOnly = true)
+    public UserSubscriptionResponseDto findActiveSubscriptionDto(Long userId) {
+        return userSubscriptionMapper.toDto(findActiveSubscription(userId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserSubscriptionResponseDto> findPurchaseHistoryDto(Long userId) {
+        return findPurchaseHistory(userId).stream()
+                .map(userSubscriptionMapper::toDto)
+                .toList();
+    }
+
     private void validateSubscriptionPurchaseAvailability(Long userId) {
         if (findValidActiveSubscription(userId).isPresent()) {
             throw new BusinessException("У вас уже есть активный абонемент. Дождитесь его окончания.");
@@ -91,29 +116,5 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                 .remainingMinutes(subscription.getIncludeMinutes())
                 .isActive(true)
                 .build();
-    }
-
-    public UserSubscription findActiveSubscription(Long userId) { // активный абонемент
-        return findValidActiveSubscription(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("У вас нет активного абонемента"));
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserSubscription> findPurchaseHistory(Long userId) { // История покупок абонементов
-        List<UserSubscription> history = userSubscriptionRepository.findAllByUserId(userId);
-        log.info("Получена история подписок для пользователя ID={}. Записей: {}", userId, history.size());
-        return history;
-    }
-
-    @Transactional(readOnly = true)
-    public UserSubscriptionResponseDto findActiveSubscriptionDto(Long userId) {
-        return userSubscriptionMapper.toDto(findActiveSubscription(userId));
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserSubscriptionResponseDto> findPurchaseHistoryDto(Long userId) {
-        return findPurchaseHistory(userId).stream()
-                .map(userSubscriptionMapper::toDto)
-                .toList();
     }
 }
