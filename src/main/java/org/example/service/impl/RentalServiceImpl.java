@@ -139,8 +139,8 @@ public class RentalServiceImpl implements RentalService {
         if (activeRental.isPresent()) {
             throw new BusinessException("У пользователя уже есть активная поездка");
         }
-        if (ScooterStatus.RENTED == scooter.getScooterStatus()) {
-            throw new BusinessException("Самокат уже занят");
+        if (ScooterStatus.AVAILABLE != scooter.getScooterStatus()) {
+            throw new BusinessException("Самокат недоступен");
         }
     }
 

@@ -30,7 +30,7 @@ public class SubscriptionCreateDto {
     @NotNull(message = "Укажите количество включенных минут (можно 0)")
     @Min(value = 0, message = "Минуты не могут быть отрицательными")
     @Schema(description = "Пакет бесплатных минут на поездки", example = "0")
-    private Integer minutesIncluded;
+    private Integer includeMinutes;
 
     @NotNull(message = "Укажите, включен ли бесплатный старт")
     @Schema(description = "Дает ли абонемент бесплатный старт", example = "true")

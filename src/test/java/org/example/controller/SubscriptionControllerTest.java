@@ -60,7 +60,7 @@ class SubscriptionControllerTest extends BaseControllerTest {
         createDto.setName("Monthly");
         createDto.setPrice(BigDecimal.valueOf(499.0));
         createDto.setDurationDays(30);
-        createDto.setMinutesIncluded(100);
+        createDto.setIncludeMinutes(100);
         createDto.setIsFreeStart(true);
 
         when(subscriptionService.createSubscription(any())).thenReturn(subscriptionResponseDto);
